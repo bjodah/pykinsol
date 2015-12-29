@@ -59,10 +59,10 @@ namespace kinsol_cxx {
             else
                 check_flag(status);
         }
-        void init(KINSysFn cb, SVector &tmpl) {
+        void init(KINSysFn cb, SVector tmpl) {
             this->init(cb, tmpl.n_vec);
         }
-        int solve(SVector& u, int strategy, SVector& u_scale, SVector& f_scale){
+        int solve(SVector u, int strategy, SVector u_scale, SVector f_scale){
             return KINSol(this->mem, u.n_vec, strategy, u_scale.n_vec, f_scale.n_vec);
         }
         void check_solve_flag(int flag, bool steptol_fail=true) {
@@ -180,7 +180,7 @@ namespace kinsol_cxx {
             else
                 check_flag(flag);
         }
-        void set_constraints(SVector& constraints){
+        void set_constraints(SVector constraints){
             int flag = KINSetConstraints(this->mem, constraints.n_vec);
             if (flag == KIN_ILL_INPUT)
                 throw std::runtime_error("The constraint vector contains illegal values.");
@@ -264,9 +264,9 @@ namespace kinsol_cxx {
                     N_Vector tmp1, N_Vector tmp2){
         // callback of req. signature wrapping Neqsys method.
         NeqSys * neqsys = (NeqSys*)user_data;
-        if (neqsys->mupper != mupper)
+        if (neqsys->mu != mupper)
             throw std::runtime_error("mupper mismatch");
-        if (neqsys->mlower != mlower)
+        if (neqsys->ml != mlower)
             throw std::runtime_error("mlower mismatch");
         neqsys->banded_padded_jac_cmaj(NV_DATA_S(u), NV_DATA_S(fu), Jac->data, Jac->ldim);
         return 0;

@@ -28,12 +28,16 @@ cdef class KinsolSolver:
             f_scale.size != x0.size or
             constraints.size != x0.size):
             raise ValueError("Incompatible lengths")
-        return <object>self.thisptr.solve(<PyObject*>x0, fnormtol, scsteptol, mxiter,
-                                  <PyObject*>x_scale, <PyObject*>f_scale, <PyObject*>constraints)
+        return <object>self.thisptr.solve(
+            <PyObject*>x0, fnormtol, scsteptol, mxiter,
+            <PyObject*>x_scale, <PyObject*>f_scale, <PyObject*>constraints)
 
-def solve(f_cb, j_cb, x0, fnormtol, scsteptol, x_scale, f_scale, constraints=None, lband=-1, uband=-1, mxiter=200):
+def solve(f_cb, j_cb, x0, fnormtol, scsteptol, x_scale, f_scale, constraints, lband=-1, uband=-1,
+          mxiter=200):
     x = np.array(x0, dtype=np.float64)
     solver = KinsolSolver(f_cb, j_cb, x.size, lband, uband)
-    if constraints is None:
-        constraints = np.zeros(x.size)
-    return solver.solve(x, fnormtol, scsteptol, x_scale, f_scale, constraints, mxiter)
+    return solver.solve(x, fnormtol, scsteptol,
+                        np.asarray(x_scale, dtype=np.float64),
+                        np.asarray(f_scale, dtype=np.float64),
+                        np.asarray(constraints, dtype=np.float64),
+                        mxiter)

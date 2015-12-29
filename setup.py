@@ -4,11 +4,8 @@
 # Tested with Sundials 2.6.2
 
 import os
-import shutil
 import sys
-from distutils.core import setup
-from distutils.extension import Extension
-import numpy as np
+from setuptools import setup, Extension
 
 
 pkg_name = 'pykinsol'
@@ -20,19 +17,20 @@ LLAPACK = os.environ.get('LLAPACK', 'lapack')
 
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
-    USE_CYTHON = os.path.exists('pykinsol/_kinsol_numpy.pyx')
+    import numpy as np
+    USE_CYTHON = os.path.exists('pykinsol/_kinsol_numpy.pyx')  # not in sdist
     ext = '.pyx' if USE_CYTHON else '.cpp'
     ext_modules = [
         Extension('pykinsol._kinsol_numpy',
                   ['pykinsol/_kinsol_numpy'+ext],
                   language='c++', extra_compile_args=['-std=c++11'],
                   libraries=['sundials_kinsol', LLAPACK,
-                             'sundials_nvecserial'])
+                             'sundials_nvecserial'],
+                  include_dirs=[np.get_include(), './include'])
     ]
     if USE_CYTHON:
         from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, include_path=['./include'],
-                                gdb_debug=True)
+        ext_modules = cythonize(ext_modules, include_path=['./include'])
 
 PYKINSOL_RELEASE_VERSION = os.environ.get('PYKINSOL_RELEASE_VERSION', '')
 
@@ -84,10 +82,11 @@ setup_kwargs = dict(
     license='BSD',
     packages=[pkg_name] + tests,
     ext_modules=ext_modules,
-    include_dirs=[np.get_include(), './include']
+    install_requires=['numpy']
 )
 
 if __name__ == '__main__':
+    import shutil
     try:
         if TAGGED_RELEASE:
             # Same commit should generate different sdist

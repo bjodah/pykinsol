@@ -1,7 +1,7 @@
 #pragma once
 #include <Python.h>
 #include <numpy/arrayobject.h>
-
+#include <chrono>
 // #include <utility> // std::pair
 #include <vector> // std::vector
 
@@ -17,24 +17,25 @@ namespace kinsol_numpy{
     public:
         PyObject *py_func, *py_jac;
         const int nu;
-        const int mlower, mupper;
+        const int ml, mu;
 
         PyKinsol(PyObject * py_func, PyObject * py_jac, size_t nu, int ml=-1, int mu=-1) :
-            py_func(py_func), py_jac(py_jac), nu(nu), mlower(ml), mupper(mu) {}
+            py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu) {}
 
         PyObject * solve(PyObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
                          PyObject *py_x_scale, PyObject *py_f_scale, PyObject * py_constraints){
+            std::clock_t cputime0 = std::clock();
             auto solver = kinsol_cxx::Solver();
             solver.init(kinsol_cxx::f_cb<PyKinsol>, SVector(this->nu));
             solver.set_user_data(static_cast<void*>(this));
-            if (mlower == -1 && mupper == -1){
+            if (ml == -1 && mu == -1){
                 solver.set_linear_solver_to_dense(this->nu);
-                solver.set_dense_jac_fn(kinsol_cxx::f_cb<PyKinsol>);
+                solver.set_dense_jac_fn(kinsol_cxx::jac_dense_cb<PyKinsol>);
             } else {
                 solver.set_linear_solver_to_banded(this->nu, this->mu, this->ml);
-                solver.set_band_jac_fn(kinsol_cxx::f_cb<PyKinsol>);
+                solver.set_band_jac_fn(kinsol_cxx::jac_band_cb<PyKinsol>);
             }
-            solver.set_num_max_iter(mxiter);
+            solver.set_num_max_iters(mxiter);
             solver.set_func_norm_tol(fnormtol);
             solver.set_scaled_steptol(scsteptol);
             solver.set_constraints(SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_constraints, 0))));
@@ -43,14 +44,16 @@ namespace kinsol_numpy{
                                     SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x_scale, 0))),
                                     SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))));
             PyObject *d = PyDict_New();
+            // naming scheme from: scipy.optimize.OptimizeResult
             PyDict_SetItemString(d, "x", py_x0);
             PyDict_SetItemString(d, "success", (flag >= 0) ?
                                  (Py_INCREF(Py_True), Py_True) :
                                  (Py_INCREF(Py_False), Py_False));
-            PyDict_SetItemString(d, "flag", PyInt_FromLong(flag));
-            PyDict_SetItemString(d, "nfeval", PyInt_FromLong(solver.get_num_func_evals()));
-            PyDict_SetItemString(d, "njeval", PyInt_FromLong(solver.get_num_jac_evals()));
-            PyDict_SetItemString(d, "nsteps", PyInt_FromLong(solver.get_num_nonlin_solv_iters()));
+            PyDict_SetItemString(d, "status", PyInt_FromLong(flag));
+            PyDict_SetItemString(d, "nfev", PyInt_FromLong(solver.get_num_func_evals()));
+            PyDict_SetItemString(d, "njev", PyInt_FromLong(solver.get_num_jac_evals()));
+            PyDict_SetItemString(d, "nit", PyInt_FromLong(solver.get_num_nonlin_solv_iters()));
+            PyDict_SetItemString(d, "time_cpu", PyFloat_FromDouble((std::clock() - cputime0) / (double)CLOCKS_PER_SEC));
             return d;
         }
 
@@ -60,7 +63,7 @@ namespace kinsol_numpy{
                 1, dims, NPY_DOUBLE, static_cast<void*>(const_cast<double*>(u)));
             PyObject * py_fval = PyArray_SimpleNewFromData(
                 1, dims, NPY_DOUBLE, static_cast<void*>(fval));
-            PyObject * py_arglist = Py_BuildValue("(OO)", py_yarr, py_dydx);
+            PyObject * py_arglist = Py_BuildValue("(OO)", py_uarr, py_fval);
             PyObject * py_result = PyEval_CallObject(this->py_func, py_arglist);
             Py_DECREF(py_arglist);
             Py_DECREF(py_fval);
@@ -106,11 +109,11 @@ namespace kinsol_numpy{
         }
         void banded_padded_jac_cmaj(const double * const u, const double * const fu,
                                     double * const jac, long int ldim){
-            npy_intp Jdims[2] { 1 + this->mlower + this->mupper, static_cast<npy_intp>(this->nx) };
+            npy_intp Jdims[2] { 1 + this->ml + this->mu, static_cast<npy_intp>(this->nu) };
             npy_intp strides[2] { sizeof(double), static_cast<npy_intp>(ldim*sizeof(double)) };
             PyObject * py_jmat = PyArray_New(
                 &PyArray_Type, 2, Jdims, NPY_DOUBLE, strides,
-                static_cast<void *>(const_cast<double *>(jac + this->mupper)), sizeof(double),
+                static_cast<void *>(const_cast<double *>(jac + this->mu)), sizeof(double),
                 NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_WRITEABLE, nullptr);
             call_py_jac(u, fu, py_jmat);
             Py_DECREF(py_jmat);
