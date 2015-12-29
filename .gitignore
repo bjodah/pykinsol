@@ -1,0 +1,12 @@
+**/*.so
+**/__pycache__
+**/*.pyc
+build/
+dist/
+cython_debug/
+.cache/
+doc/
+MANIFEST
+pycvodes/_cvodes_numpy.cpp
+.coverage
+htmlcov/

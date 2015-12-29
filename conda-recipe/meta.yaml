@@ -1,0 +1,32 @@
+package:
+    name: pykinsol
+    version: 0.1.0.git
+
+source:
+    path: ../
+
+build:
+    number: 0
+
+requirements:
+    build:
+        - python
+        - numpy
+        - sundials
+        - cython
+    run:
+        - python
+        - numpy
+        - sundials
+
+test:
+    imports:
+        - pykinsol
+    requires:
+        - pytest
+    commands:
+        - py.test --pyargs pykinsol
+
+about:
+    home: https://github.com/bjodah/pykinsol
+    license: BSD
