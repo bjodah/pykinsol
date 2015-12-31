@@ -67,8 +67,7 @@ tests = [
 ]
 
 descr = 'Python binding for kinsol from the sundials library.'
-with open(pkg_name + '/__init__.py') as f:
-    long_description = f.read().split('"""')[1]
+long_description = open('README.rst').read()
 
 setup_kwargs = dict(
     name=pkg_name,
@@ -82,7 +81,7 @@ setup_kwargs = dict(
     license='BSD',
     packages=[pkg_name] + tests,
     ext_modules=ext_modules,
-    install_requires=['numpy']
+    install_requires=['numpy']  # and sundials and a C++11 compiler
 )
 
 if __name__ == '__main__':

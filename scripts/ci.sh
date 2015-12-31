@@ -11,4 +11,5 @@ pip3 install dist/*.tar.gz
 python2.7 setup.py build_ext -i
 python3 setup.py build_ext -i
 PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $1 --cov-report html
+./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
 ! grep "DO-NOT-MERGE!" -R . --exclude ci.sh
