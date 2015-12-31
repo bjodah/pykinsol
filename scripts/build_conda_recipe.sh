@@ -10,6 +10,9 @@ fi
 ./scripts/check_clean_repo_on_master.sh
 echo ${1#v}>__conda_version__.txt
 trap "rm __conda_version__.txt" EXIT SIGINT SIGTERM
+if [[ ! -z "$CONDA_BIN_PATH" ]]; then
+    export PATH=$CONDA_BIN_PATH:$PATH
+fi
 for CPY in {27,34}; do
     PYTHONNOUSERSITE=1 CONDA_PY=$CPY conda build conda-recipe
 done
