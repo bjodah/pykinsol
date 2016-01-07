@@ -9,4 +9,4 @@ cdef extern from "kinsol_numpy.hpp" namespace "kinsol_numpy":
         const int mlower, mupper
 
         PyKinsol(PyObject*, PyObject*, size_t, int, int)
-        PyObject* solve(PyObject*, double, double, long int, PyObject*, PyObject*, PyObject*)
+        PyObject* solve(PyObject*, double, double, long int, PyObject*, PyObject*, PyObject*) except +
