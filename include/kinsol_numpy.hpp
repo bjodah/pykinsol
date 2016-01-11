@@ -11,7 +11,7 @@
 
 namespace kinsol_numpy{
 
-    using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
+    using SVector = sundials_cxx::nvector_serial::Vector;
 
     class PyKinsol {
     public:
@@ -54,6 +54,38 @@ namespace kinsol_numpy{
             PyDict_SetItemString(d, "njev", PyInt_FromLong(solver.get_num_jac_evals()));
             PyDict_SetItemString(d, "nit", PyInt_FromLong(solver.get_num_nonlin_solv_iters()));
             PyDict_SetItemString(d, "time_cpu", PyFloat_FromDouble((std::clock() - cputime0) / (double)CLOCKS_PER_SEC));
+            switch(flag){
+            case KIN_SUCCESS:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_SUCCESS")); break;
+            case KIN_INITIAL_GUESS_OK:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_INITIAL_GUESS_OK")); break;
+            case KIN_STEP_LT_STPTOL:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_STEP_LT_STPTOL")); break;
+            case KIN_LINESEARCH_NONCONV:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_LINESEARCH_NONCONV")); break;
+            case KIN_MAXITER_REACHED:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_MAXITER_REACHED")); break;
+            case KIN_MXNEWT_5X_EXCEEDED:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_MXNEWT_5X_EXCEEDED")); break;
+            case KIN_LINESEARCH_BCFAIL:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_LINESEARCH_BCFAIL")); break;
+            case KIN_LINSOLV_NO_RECOVERY:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_LINSOLV_NO_RECOVERY")); break;
+            case KIN_LINIT_FAIL:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_LINIT_FAIL")); break;
+            case KIN_LSETUP_FAIL:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_LSETUP_FAIL")); break;
+            case KIN_LSOLVE_FAIL:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_LSOLVE_FAIL")); break;
+            case KIN_MEM_NULL:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_MEM_NULL")); break;
+            case KIN_NO_MALLOC:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_NO_MALLOC")); break;
+            case KIN_ILL_INPUT:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "KIN_ILL_INPUT")); break;
+            default:
+                PyDict_SetItemString(d, "message", Py_BuildValue("s", "Unknown exit status.")); break;
+            }
             return d;
         }
 

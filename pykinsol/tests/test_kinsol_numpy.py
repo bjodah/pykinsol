@@ -17,15 +17,11 @@ def j_cb(x, Jout, fx):
     Jout[1, 1] = 1 + 3/2 * (x[1] - x[0])**2
 
 
-# def test_solve__failure():
-#     result = solve(f_cb, j_cb, [1, 0])
-#     assert not result['success']  # newton method fails for this
-
-
 def test_solve():
     result = solve(f_cb, j_cb, [0, 0])
     print(result)
     assert result['success']
+    assert result['message'] == 'KIN_SUCCESS'
     assert result['status'] == 0
     assert result['nit'] > 1
     assert result['nfev'] > 1
@@ -33,3 +29,11 @@ def test_solve():
     assert result['time_cpu'] > 1e-15
     assert abs(result['x'][0] - 0.8411639) < 2e-7
     assert abs(result['x'][1] - 0.1588361) < 2e-7
+
+
+def test_solve__failure():
+    mxiter = 6
+    result = solve(f_cb, j_cb, [.5, .5], mxiter=mxiter)
+    assert not result['success']
+    assert result['message'] == 'KIN_MAXITER_REACHED'
+    assert result['nit'] == mxiter
