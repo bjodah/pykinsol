@@ -4,6 +4,12 @@ pykinsol
 .. image:: http://hera.physchem.kth.se:9090/api/badges/bjodah/pykinsol/status.svg
    :target: http://hera.physchem.kth.se:9090/bjodah/pykinsol
    :alt: Build status
+.. image:: https://circleci.com/gh/bjodah/pykinsol.svg?style=svg
+   :target: https://circleci.com/gh/bjodah/pykinsol
+   :alt: Build status on CircleCI
+.. image:: https://secure.travis-ci.org/bjodah/pykinsol.svg?branch=master
+   :target: http://travis-ci.org/bjodah/pykinsol
+   :alt: Build status on Travis-CI
 .. image:: https://img.shields.io/pypi/v/pykinsol.svg
    :target: https://pypi.python.org/pypi/pykinsol
    :alt: PyPI version
