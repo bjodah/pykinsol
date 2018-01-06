@@ -1,3 +1,2 @@
 #!/bin/bash
-${PYTHON} setup.py build
-${PYTHON} setup.py install
+LLAPACK=openblas CPLUS_INCLUDE_PATH=${PREFIX}/include ${PYTHON} -m pip install --no-deps --ignore-installed .

@@ -1,15 +1,20 @@
 #!/bin/bash -xeu
+PKG_NAME=${1:-${CI_REPO##*/}}
 if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
-    eval export ${1^^}_RELEASE_VERSION=\$CI_BRANCH
+    eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
     echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
 fi
-python2 setup.py sdist
-pip install dist/*.tar.gz
-(cd /; python2.7 -m pytest --pyargs $1)
-pip3 install dist/*.tar.gz
-(cd /; python3 -m pytest --pyargs $1)
-python2.7 setup.py build_ext -i
-python3 setup.py build_ext -i
-PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $1 --cov-report html
+
+python2.7 setup.py sdist
+for PYTHON in python2.7 python3; do
+    (cd dist/; $PYTHON -m pip install $PKG_NAME-$($PYTHON ../setup.py --version).tar.gz)
+    (cd /; $PYTHON -m pytest --pyargs $PKG_NAME)
+done
+
+PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
 ./scripts/coverage_badge.py htmlcov/ htmlcov/coverage.svg
-! grep "DO-NOT-MERGE!" -R . --exclude ci.sh
+
+# Make sure repo is pip installable from git-archive zip
+git archive -o /tmp/$PKG_NAME.zip HEAD
+python3 -m pip install --force-reinstall /tmp/$PKG_NAME.zip
+(cd /; python3 -c "from ${PKG_NAME} import get_include as gi; import os; assert 'kinsol_numpy.pxd' in os.listdir(gi())")

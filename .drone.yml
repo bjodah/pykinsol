@@ -1,11 +1,14 @@
 build:
-  image: bjodah/bjodahimg:latest
+  image: bjodah/bjodahimg16dev:v1.3
   commands:
     - ./scripts/ci.sh pykinsol
-    - (cd examples/; ipython2 nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
+    - (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
     - ./scripts/prepare_deploy.sh
+    - bash -c '[[ $(python setup.py --version) =~ ^[0-9]+.* ]]'
+    - ./scripts/grep-for-merge-blocking-token.sh
+    - ./scripts/grep-for-binary-data.sh
 
 deploy:
 

@@ -1,32 +1,52 @@
+{% set name = "pykinsol" %}
+{% set version = "0.2.0.dev0+git" %}
+{% set variant = "openblas" %}
+
 package:
-    name: pykinsol
-    version: 0.1.0.git
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-    path: ../
+  git_url: ../
 
 build:
-    number: 0
+  number: 0
+  features:
+    - blas_{{ variant }}  # [not win]
 
 requirements:
-    build:
-        - python
-        - numpy
-        - sundials
-        - cython
-    run:
-        - python
-        - numpy
-        - sundials
+  build:
+    - blas 1.1 {{ variant }}  # [not win]
+    - openblas 0.2.19*  # [not win]
+    - sundials <3.0.0
+    - python
+    - setuptools
+    - numpy
+    - cython
+  run:
+    - blas 1.1 {{ variant }}  # [not win]
+    - openblas 0.2.19*  # [not win]
+    - sundials <3.0.0
+    - python
+    - setuptools
+    - numpy
 
 test:
-    imports:
-        - pykinsol
-    requires:
-        - nose
-    commands:
-        - nosetests pykinsol
+  imports:
+    - pykinsol
+  requires:
+    - pytest
+  commands:
+    - pytest --pyargs {{ name }}
 
 about:
-    home: https://github.com/bjodah/pykinsol
-    license: BSD
+  home: https://github.com/bjodah/{{ name }}
+  license: BSD 2-Clause
+  license_file: LICENSE
+  summary: 'Python wrapper around KINSOL (from the SUNDIALS library)'
+  doc_url: https://bjodah.github.io/{{ name }}/latest
+
+
+extra:
+  recipe-maintainers:
+    - bjodah

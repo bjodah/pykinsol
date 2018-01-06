@@ -1,4 +1,5 @@
 # -*- coding: utf-8; mode: cython -*-
+# distutils: language = c++
 
 from cpython.object cimport PyObject
 from libcpp cimport bool
