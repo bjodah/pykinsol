@@ -20,7 +20,7 @@ def solve(f_cb, j_cb, x0, fnormtol=1e-6, scsteptol=1e-12, x_scale=None,
         jmat_out *inplace*. fx contains current fout of f_cb(x).
     x0: array_like
         initial guess
-    \*\*kwargs: dict
+    \\*\\*kwargs: dict
 
     Returns
     -------
