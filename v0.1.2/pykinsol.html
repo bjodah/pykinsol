@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>pykinsol package &mdash; pykinsol 0.1.2 documentation</title>
+  <title>pykinsol package &mdash; pykinsol 0.1.2.post1+gb57ece8 documentation</title>
   
 
   
@@ -35,7 +35,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="pykinsol 0.1.2 documentation" href="index.html"/>
+    <link rel="top" title="pykinsol 0.1.2.post1+gb57ece8 documentation" href="index.html"/>
         <link rel="prev" title="Welcome to pykinsol’s documentation!" href="index.html"/> 
 
   
@@ -65,7 +65,7 @@
             
             
               <div class="version">
-                0.1.2
+                0.1.2.post1+gb57ece8
               </div>
             
           
@@ -146,9 +146,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            
-              <a href="https://github.com/bjodah/pykinsol/blob/v0.1.2/doc/pykinsol.rst" class="fa fa-github"> Edit on GitHub</a>
-            
+            <a href="_sources/pykinsol.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -178,23 +176,37 @@
 <dt id="pykinsol.core.solve">
 <code class="descclassname">pykinsol.core.</code><code class="descname">solve</code><span class="sig-paren">(</span><em>f_cb</em>, <em>j_cb</em>, <em>x0</em>, <em>fnormtol=1e-06</em>, <em>scsteptol=1e-12</em>, <em>x_scale=None</em>, <em>f_scale=None</em>, <em>constraints=None</em>, <em>lband=-1</em>, <em>uband=-1</em>, <em>mxiter=200</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pykinsol/core.html#solve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pykinsol.core.solve" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solves a system of (non-linear) equations.</p>
-<dl class="docutils">
-<dt>f_cb: callable</dt>
-<dd>Function with signature f(x, fout) which modifies fout <em>inplace</em>.</dd>
-<dt>j_cb: callable</dt>
-<dd>Function with signature j(x, jmat_out, fx) which modifies
-jmat_out <em>inplace</em>. fx contains current fout of f_cb(x).</dd>
-<dt>x0: array_like</dt>
-<dd>initial guess</dd>
-</dl>
-<p>**kwargs: dict</p>
-<dl class="docutils">
-<dt>dict:</dt>
-<dd>‘x’: solution vector
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>f_cb: callable</strong></p>
+<blockquote>
+<div><p>Function with signature f(x, fout) which modifies fout <em>inplace</em>.</p>
+</div></blockquote>
+<p><strong>j_cb: callable</strong></p>
+<blockquote>
+<div><p>Function with signature j(x, jmat_out, fx) which modifies
+jmat_out <em>inplace</em>. fx contains current fout of f_cb(x).</p>
+</div></blockquote>
+<p><strong>x0: array_like</strong></p>
+<blockquote>
+<div><p>initial guess</p>
+</div></blockquote>
+<p><strong>**kwargs: dict</strong></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dict:</p>
+<blockquote class="last">
+<div><p>‘x’: solution vector
 ‘success’: bool
 ‘nfev’: int
-‘njev’: int</dd>
-</dl>
+‘njev’: int</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </div>
@@ -242,7 +254,7 @@ jmat_out <em>inplace</em>. fx contains current fout of f_cb(x).</dd>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.1.2',
+            VERSION:'0.1.2.post1+gb57ece8',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true,
