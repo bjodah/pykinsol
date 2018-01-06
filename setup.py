@@ -17,6 +17,7 @@ pkg_name = 'pykinsol'
 url = 'https://github.com/bjodah/' + pkg_name
 license = 'BSD'
 
+
 def _path_under_setup(*args):
     return os.path.join(os.path.dirname(__file__), *args)
 
