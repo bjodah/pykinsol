@@ -20,13 +20,15 @@ requirements:
     - openblas 0.2.19*  # [not win]
     - sundials <3.0.0
     - python
-    - cython
+    - setuptools
     - numpy
+    - cython
   run:
     - blas 1.1 {{ variant }}  # [not win]
     - openblas 0.2.19*  # [not win]
     - sundials <3.0.0
     - python
+    - setuptools
     - numpy
 
 test:

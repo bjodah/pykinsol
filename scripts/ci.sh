@@ -17,3 +17,4 @@ PYTHONPATH=$(pwd) ./scripts/run_tests.sh --cov $PKG_NAME --cov-report html
 # Make sure repo is pip installable from git-archive zip
 git archive -o /tmp/$PKG_NAME.zip HEAD
 python3 -m pip install --force-reinstall /tmp/$PKG_NAME.zip
+(cd /; python3 -c "from ${PKG_NAME} import get_include as gi; import os; assert 'kinsol_numpy.pxd' in os.listdir(gi())")
