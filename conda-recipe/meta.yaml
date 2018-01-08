@@ -10,14 +10,14 @@ source:
   git_url: ../
 
 build:
-  number: 0
+  number: 200
   features:
     - blas_{{ variant }}  # [not win]
 
 requirements:
   build:
     - blas 1.1 {{ variant }}  # [not win]
-    - openblas 0.2.19*  # [not win]
+    - openblas 0.2.20*  # [not win]
     - sundials <3.0.0
     - python
     - setuptools
@@ -25,7 +25,7 @@ requirements:
     - cython
   run:
     - blas 1.1 {{ variant }}  # [not win]
-    - openblas 0.2.19*  # [not win]
+    - openblas 0.2.20*  # [not win]
     - sundials <3.0.0
     - python
     - setuptools
