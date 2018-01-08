@@ -43,6 +43,8 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     ext_modules[0].extra_compile_args = ['-std=c++11']
     ext_modules[0].include_dirs = [np.get_include(), package_include]
     ext_modules[0].libraries += ['sundials_kinsol', LLAPACK, 'sundials_nvecserial']
+    if int(os.environ.get('KINSOL_SUNDIALS', '2')) == 3:
+        ext_modules[0].libraries += ["lsundials_sunlinsollapackdense"]
 
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
 RELEASE_VERSION = os.environ.get(_version_env_var, '')
