@@ -43,7 +43,7 @@ namespace sundials_cxx {
             // Vector owns the memory containing data
             Vector(long int n) :
                 VectorBase_(N_VNew_Serial(n)) {}
-            Vector(const Vector& v)
+            Vector(const VectorBase_& v)
                 : VectorBase_(N_VNew_Serial(v.size())) { // copy-constructor
                 v.dump(get_data_ptr());
             }

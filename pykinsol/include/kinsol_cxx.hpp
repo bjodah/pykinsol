@@ -20,6 +20,7 @@
 namespace kinsol_cxx {
 
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
+    using SVectorView = sundials_cxx::nvector_serial::VectorView; // serial vector
 
     // enum class Strategy : int {NONE=KIN_NONE, LINESEARCH=KIN_LINESEARCH, FP=KIN_FP, PICARD=KIN_PICARD};
     // enum class EtaChoice : int {C1=KIN_ETACHOICE1, C2=KIN_ETACHOICE2, CONSTANT=KIN_ETACONSTANT}
@@ -79,7 +80,7 @@ namespace kinsol_cxx {
         void init(KINSysFn cb, SVector tmpl) {
             this->init(cb, tmpl.n_vec);
         }
-        int solve(SVector u, int strategy, SVector u_scale, SVector f_scale){
+        int solve(SVectorView u, int strategy, SVector u_scale, SVector f_scale){
             return KINSol(this->mem, u.n_vec, strategy, u_scale.n_vec, f_scale.n_vec);
         }
         void check_solve_flag(int flag, bool steptol_fail=true) {
