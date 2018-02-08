@@ -1,0 +1,3 @@
+{
+  "pykinsol/tests/test_kinsol_numpy.py::test_solve": true
+}

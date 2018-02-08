@@ -1,16 +1,5 @@
 #pragma once
 
-// Thin C++11 wrapper around KINSOL v2.8.2 (SUNDIALS v2.6.2)
-// far from all functionality is available yet.
-// sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
-
-// #include <assert.h>
-// #include <cmath>
-// #include <cstring>
-// #include <memory>
-// #include <utility>
-// #include <vector>
-
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <kinsol/kinsol_direct.h>
 #include <kinsol/kinsol.h>
