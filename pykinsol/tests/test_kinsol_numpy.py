@@ -19,7 +19,6 @@ def j_cb(x, Jout, fx):
 
 def test_solve():
     result = solve(f_cb, j_cb, [0, 0])
-    print(result)
     assert result['success']
     assert result['message'] == 'KIN_SUCCESS'
     assert result['status'] == 0

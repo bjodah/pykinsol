@@ -11,4 +11,4 @@ MANIFEST
 pykinsol/_kinsol_numpy.cpp
 .coverage
 htmlcov/
-deploy/
+deploy/*cache/

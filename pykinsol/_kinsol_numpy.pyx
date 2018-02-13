@@ -10,6 +10,7 @@ from kinsol_numpy cimport PyKinsol
 
 cnp.import_array()  # Numpy C-API initialization  (see include/kinsol_numpy.hpp)
 
+
 cdef class KinsolSolver:
 
     cdef PyKinsol *thisptr
@@ -33,12 +34,12 @@ cdef class KinsolSolver:
             <PyObject*>x0, fnormtol, scsteptol, mxiter,
             <PyObject*>x_scale, <PyObject*>f_scale, <PyObject*>constraints)
 
-def solve(f_cb, j_cb, x0, fnormtol, scsteptol, x_scale, f_scale, constraints, lband=-1, uband=-1,
-          mxiter=200):
+
+def _a(arr):
+    return np.asarray(arr, dtype=np.float64)
+
+
+def solve(f_cb, j_cb, x0, fnormtol, scsteptol, x_scale, f_scale, constraints, lband=-1, uband=-1, mxiter=200):
     x = np.array(x0, dtype=np.float64)
     solver = KinsolSolver(f_cb, j_cb, x.size, lband, uband)
-    return solver.solve(x, fnormtol, scsteptol,
-                        np.asarray(x_scale, dtype=np.float64),
-                        np.asarray(f_scale, dtype=np.float64),
-                        np.asarray(constraints, dtype=np.float64),
-                        mxiter)
+    return solver.solve(x, fnormtol, scsteptol, _a(x_scale), _a(f_scale), _a(constraints), mxiter)

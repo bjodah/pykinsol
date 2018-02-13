@@ -11,7 +11,7 @@
 
 namespace kinsol_numpy{
 
-    using SVector = sundials_cxx::nvector_serial::Vector;
+    using SVectorView = sundials_cxx::nvector_serial::VectorView;
 
     class PyKinsol {
     public:
@@ -26,7 +26,7 @@ namespace kinsol_numpy{
                          PyObject *py_x_scale, PyObject *py_f_scale, PyObject * py_constraints){
             std::clock_t cputime0 = std::clock();
             auto solver = kinsol_cxx::Solver();
-            solver.init(kinsol_cxx::f_cb<PyKinsol>, SVector(this->nu));
+            solver.init(kinsol_cxx::f_cb<PyKinsol>, SVectorView(this->nu));
             solver.set_user_data(static_cast<void*>(this));
             if (ml == -1 && mu == -1){
                 solver.set_linear_solver_to_dense(this->nu);
@@ -38,11 +38,11 @@ namespace kinsol_numpy{
             solver.set_num_max_iters(mxiter);
             solver.set_func_norm_tol(fnormtol);
             solver.set_scaled_steptol(scsteptol);
-            solver.set_constraints(SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_constraints, 0))));
-            int flag = solver.solve(SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x0, 0))),
+            solver.set_constraints(SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_constraints, 0))));
+            int flag = solver.solve(SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x0, 0))),
                                     KIN_LINESEARCH,
-                                    SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x_scale, 0))),
-                                    SVector(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))));
+                                    SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x_scale, 0))),
+                                    SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))));
             PyObject *d = PyDict_New();
             // naming scheme from: scipy.optimize.OptimizeResult
             PyDict_SetItemString(d, "x", py_x0);
@@ -123,7 +123,6 @@ namespace kinsol_numpy{
             if (py_result == nullptr){
                 throw std::runtime_error("jac() failed");
             } else if (py_result != Py_None){
-                // py_result is not None
                 throw std::runtime_error("jac() did not return None");
             }
             Py_DECREF(py_result);

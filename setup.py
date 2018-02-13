@@ -22,8 +22,11 @@ def _path_under_setup(*args):
     return os.path.join(os.path.dirname(__file__), *args)
 
 release_py_path = _path_under_setup(pkg_name, '_release.py')
-USE_CYTHON = os.path.exists('pykinsol/_kinsol_numpy.pyx')  # not in sdist
+config_py_path = _path_under_setup(pkg_name, '_config.py')
 
+
+USE_CYTHON = os.path.exists('pykinsol/_kinsol_numpy.pyx')  # not in sdist
+package_include = os.path.join(pkg_name, 'include')
 
 # Cythonize .pyx file if it exists (not in source distribution)
 ext_modules = []
@@ -31,8 +34,11 @@ ext_modules = []
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
-    LLAPACK = os.environ.get('LLAPACK', 'lapack')
-    package_include = os.path.join(pkg_name, 'include')
+    env = None  # silence pyflakes, 'env' is actually set on the next line
+    exec(open(config_py_path).read())
+    for k, v in list(env.items()):
+        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+
     ext = '.pyx' if USE_CYTHON else '.cpp'
     sources = [os.path.join(pkg_name, '_kinsol_numpy'+ext)]
     ext_modules = [Extension('%s._kinsol_numpy' % pkg_name, sources)]
@@ -42,7 +48,7 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     ext_modules[0].language = 'c++'
     ext_modules[0].extra_compile_args = ['-std=c++11']
     ext_modules[0].include_dirs = [np.get_include(), package_include]
-    ext_modules[0].libraries += ['sundials_kinsol', LLAPACK, 'sundials_nvecserial']
+    ext_modules[0].libraries += env['LAPACK'].split(',') + env['SUNDIALS_LIBS'].split(',')
 
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
 RELEASE_VERSION = os.environ.get(_version_env_var, '')

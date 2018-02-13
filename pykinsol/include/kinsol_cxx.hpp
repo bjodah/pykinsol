@@ -1,20 +1,16 @@
 #pragma once
 
-// Thin C++11 wrapper around KINSOL v2.8.2 (SUNDIALS v2.6.2)
-// far from all functionality is available yet.
-// sundials-2.6.2.tar.gz (MD5: 3deeb0ede9f514184c6bd83ecab77d95)
-
-// #include <assert.h>
-// #include <cmath>
-// #include <cstring>
-// #include <memory>
-// #include <utility>
-// #include <vector>
-
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
-#include <kinsol/kinsol.h>
 #include <kinsol/kinsol_direct.h>
+#include <kinsol/kinsol.h>
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <sunmatrix/sunmatrix_dense.h>
+#include <sunmatrix/sunmatrix_band.h>
+#include <sunlinsol/sunlinsol_lapackdense.h>
+#include <sunlinsol/sunlinsol_lapackband.h>
+#else
 #include <kinsol/kinsol_lapack.h>
+#endif
 
 #ifndef NDEBUG
 #include <iostream> // DEBUG
@@ -24,6 +20,7 @@
 namespace kinsol_cxx {
 
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
+    using SVectorView = sundials_cxx::nvector_serial::VectorView; // serial vector
 
     // enum class Strategy : int {NONE=KIN_NONE, LINESEARCH=KIN_LINESEARCH, FP=KIN_FP, PICARD=KIN_PICARD};
     // enum class EtaChoice : int {C1=KIN_ETACHOICE1, C2=KIN_ETACHOICE2, CONSTANT=KIN_ETACONSTANT}
@@ -40,6 +37,11 @@ namespace kinsol_cxx {
     }
 
     class Solver{ // Thin wrapper class of KINSolver in KINODES
+#if SUNDIALS_VERSION_MAJOR >= 3
+        SUNMatrix A_ = nullptr;
+        SUNLinearSolver LS_ = nullptr;
+        N_Vector y_ = nullptr;
+#endif
     public:
         void *mem {nullptr};
         Solver() {
@@ -48,10 +50,26 @@ namespace kinsol_cxx {
         ~Solver(){
             if (this->mem)
                 KINFree(&(this->mem));
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (this->y_)
+                N_VDestroy(this->y_);
+            if (this->LS_)
+                SUNLinSolFree(this->LS_);
+            if (this->A_)
+                SUNMatDestroy(this->A_);
+#endif
         }
         // init
-        void init(KINSysFn cb, N_Vector tmpl) {
-            int status = KINInit(this->mem, cb, tmpl);
+        void init(KINSysFn cb, N_Vector y) {
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (y_)
+                throw std::runtime_error("y_ already allocated");
+            y_ = N_VNew_Serial(NV_LENGTH_S(y));
+            std::memcpy(NV_DATA_S(y_), NV_DATA_S(y), NV_LENGTH_S(y)*sizeof(realtype));
+#else
+            auto y_ = y;
+#endif
+            int status = KINInit(this->mem, cb, y_);
             if (status == KIN_ILL_INPUT)
                 throw std::runtime_error("KINInit failed (KIN_ILL_INPUT).");
             else if (status == KIN_MEM_FAIL)
@@ -62,7 +80,7 @@ namespace kinsol_cxx {
         void init(KINSysFn cb, SVector tmpl) {
             this->init(cb, tmpl.n_vec);
         }
-        int solve(SVector u, int strategy, SVector u_scale, SVector f_scale){
+        int solve(SVectorView u, int strategy, SVector u_scale, SVector f_scale){
             return KINSol(this->mem, u.n_vec, strategy, u_scale.n_vec, f_scale.n_vec);
         }
         void check_solve_flag(int flag, bool steptol_fail=true) {
@@ -198,26 +216,91 @@ namespace kinsol_cxx {
 
         // dense jacobian
         void set_linear_solver_to_dense(int ny){
-            int flag = KINLapackDense(this->mem, ny);
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (A_ == nullptr){
+                if (A_)
+                    throw std::runtime_error("matrix already set");
+                A_ = SUNDenseMatrix(ny, ny);
+                if (!A_)
+                    throw std::runtime_error("SUNDenseMatrix failed.");
+            }
+            if (LS_ == nullptr){
+                if (LS_)
+                    throw std::runtime_error("linear solver already set");
+                LS_ = SUNLapackDense(y_, A_);
+                if (!LS_)
+                    throw std::runtime_error("SUNDenseLinearSolver failed.");
+            }
+            flag = KINDlsSetLinearSolver(this->mem, LS_, A_);
+            if (flag < 0)
+                throw std::runtime_error("KINDlsSetLinearSolver failed.");
+#else
+            flag = KINLapackDense(this->mem, ny);
             if (flag != KINDLS_SUCCESS)
                 throw std::runtime_error("KINLapackDense failed");
+#endif
         }
-        void set_dense_jac_fn(KINDlsDenseJacFn djac){
-            int flag = KINDlsSetDenseJacFn(this->mem, djac);
+        void set_dense_jac_fn(
+#if SUNDIALS_VERSION_MAJOR >= 3
+                              KINDlsJacFn
+#else
+                              KINDlsDenseJacFn
+#endif
+
+                              djac){
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            flag = KINDlsSetJacFn(this->mem, djac);
+#else
+            flag = KINDlsSetDenseJacFn(this->mem, djac);
+#endif
             if (flag < 0)
-                throw std::runtime_error("KINDlsSetDenseJacFn failed.");
+                throw std::runtime_error("set_dense_jac_fn failed.");
         }
 
         // banded jacobian
-        void set_linear_solver_to_banded(int N, int mupper, int mlower){
-            int flag = KINLapackBand(this->mem, N, mupper, mlower);
+        void set_linear_solver_to_banded(int ny, int mupper, int mlower){
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            if (A_ == nullptr){
+                if (A_)
+                    throw std::runtime_error("matrix already set");
+                A_ = SUNBandMatrix(ny, mupper, mlower, std::min(ny-1, mlower+mupper));
+                if (!A_)
+                    throw std::runtime_error("SUNDenseMatrix failed.");
+            }
+            if (LS_ == nullptr){
+                if (LS_)
+                    throw std::runtime_error("linear solver already set");
+                LS_ = SUNLapackBand(y_, A_);
+                if (!LS_)
+                    throw std::runtime_error("SUNDenseLinearSolver failed.");
+            }
+            flag = KINDlsSetLinearSolver(this->mem, LS_, A_);
+            if (flag < 0)
+                throw std::runtime_error("KINDlsSetLinearSolver failed.");
+#else
+            flag = KINLapackBand(this->mem, ny, mupper, mlower);
             if (flag != KINDLS_SUCCESS)
                 throw std::runtime_error("KINLapackBand failed");
+#endif
         }
-        void set_band_jac_fn(KINDlsBandJacFn djac){
-            int flag = KINDlsSetBandJacFn(this->mem, djac);
+        void set_band_jac_fn(
+#if SUNDIALS_VERSION_MAJOR >= 3
+                              KINDlsJacFn
+#else
+                              KINDlsBandJacFn
+#endif
+                              djac){
+            int flag;
+#if SUNDIALS_VERSION_MAJOR >= 3
+            flag = KINDlsSetJacFn(this->mem, djac);
+#else
+            flag = KINDlsSetBandJacFn(this->mem, djac);
+#endif
             if (flag < 0)
-                throw std::runtime_error("KINDlsSetBandJacFn failed.");
+                throw std::runtime_error("set_band_jac_fn failed.");
         }
 
         // Optional output
@@ -250,25 +333,55 @@ namespace kinsol_cxx {
     }
 
     template <class NeqSys>
-    int jac_dense_cb(long int N, N_Vector u, N_Vector fu, DlsMat Jac, void *user_data,
+    int jac_dense_cb(
+#if SUNDIALS_VERSION_MAJOR < 3
+                     long int N,
+#endif
+                     N_Vector u, N_Vector fu,
+#if SUNDIALS_VERSION_MAJOR < 3
+                     DlsMat Jac,
+#else
+                     SUNMatrix Jac,
+#endif
+                     void *user_data,
                      N_Vector tmp1, N_Vector tmp2){ // KINDlsDenseJacFn
         NeqSys * neqsys = (NeqSys*)user_data;
-        neqsys->dense_jac_cmaj(NV_DATA_S(u), NV_DATA_S(fu), DENSE_COL(Jac, 0),
-                               Jac->ldim);
+        neqsys->dense_jac_cmaj(NV_DATA_S(u), NV_DATA_S(fu),
+#if SUNDIALS_VERSION_MAJOR < 3
+                               DENSE_COL(Jac, 0), Jac->ldim
+#else
+                               SM_DATA_D(Jac), NV_LENGTH_S(u)
+#endif
+                               );
         return 0;
     }
 
     template <typename NeqSys>
-    int jac_band_cb(long int N, long int mupper, long int mlower,
-                    N_Vector u, N_Vector fu, DlsMat Jac, void *user_data,
+    int jac_band_cb(
+#if SUNDIALS_VERSION_MAJOR < 3
+                    long int /* N */, long int mupper, long int mlower,
+#endif
+                    N_Vector u, N_Vector fu,
+#if SUNDIALS_VERSION_MAJOR < 3
+                     DlsMat Jac,
+#else
+                     SUNMatrix Jac,
+#endif
+                    void *user_data,
                     N_Vector tmp1, N_Vector tmp2){
         // callback of req. signature wrapping Neqsys method.
         NeqSys * neqsys = (NeqSys*)user_data;
+#if SUNDIALS_VERSION_MAJOR < 3
         if (neqsys->mu != mupper)
             throw std::runtime_error("mupper mismatch");
         if (neqsys->ml != mlower)
             throw std::runtime_error("mlower mismatch");
-        neqsys->banded_padded_jac_cmaj(NV_DATA_S(u), NV_DATA_S(fu), Jac->data, Jac->ldim);
+        auto Jac_ = Jac;
+#else
+        auto Jac_ = SM_CONTENT_B(Jac);
+#endif
+
+        neqsys->banded_padded_jac_cmaj(NV_DATA_S(u), NV_DATA_S(fu), Jac_->data, Jac_->ldim);
         return 0;
     }
 
