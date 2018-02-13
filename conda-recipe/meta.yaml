@@ -10,7 +10,7 @@ source:
   git_url: ../
 
 build:
-  number: 200
+  number: 180
   features:
     - blas_{{ variant }}  # [not win]
 
