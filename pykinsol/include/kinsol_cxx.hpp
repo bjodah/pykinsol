@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sundials/sundials_config.h>
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
 #include <kinsol/kinsol_direct.h>
 #include <kinsol/kinsol.h>
@@ -9,11 +10,11 @@
 #include <sunlinsol/sunlinsol_lapackdense.h>
 #include <sunlinsol/sunlinsol_lapackband.h>
 #else
+#if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
 #include <kinsol/kinsol_lapack.h>
+#else
+#error "Unkown sundials version"
 #endif
-
-#ifndef NDEBUG
-#include <iostream> // DEBUG
 #endif
 
 
