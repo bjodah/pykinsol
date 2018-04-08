@@ -85,7 +85,7 @@ Here is a simple example:
    >>> from pykinsol import solve
    >>> result = solve(f, j, [0, 0])
    >>> assert result['success']
-   >>> print(result['x'])
+   >>> print(result['x'])  # doctest: +SKIP
    [ 0.84116389  0.15883611]
 
 
