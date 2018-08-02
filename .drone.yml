@@ -1,7 +1,15 @@
+cache:
+  mount:
+      - /drone/sund-3.1.2-lapack-klu
+      - /drone/sund-2.7.0-lapack-klu
 build:
-  image: bjodah/bjodahimg16dev:v1.3
+  image: bjodah/bjodahimg18dev:v1.3
   commands:
-    - ./scripts/ci.sh pykinsol
+    - git fetch -tq
+    - if [ ! -d /drone/sund-3.1.2-lapack-klu ]; then .ci/get_sundials.sh 3.1.2 /drone/sund-3.1.2-lapack-klu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=ON -DSUNDIALS_INDEX_TYPE:STRING="int32_t" -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
+    - if [ ! -d /drone/sund-2.7.0-lapack-klu ]; then .ci/get_sundials.sh 2.7.0 /drone/sund-2.7.0-lapack-klu -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi    
+    - .ci/run_ci.sh pycvodes /drone/sund-3.1.2-lapack-klu
+    - .ci/run_ci.sh pycvodes /drone/sund-2.7.0-lapack-klu
     - (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
     - (cd examples/; ../scripts/render_index.sh *.html)
     - ./scripts/generate_docs.sh
@@ -15,7 +23,6 @@ build:
     - rm -r /usr/local/lib/python*/dist-packages/pykinsol*
     - mv deploy/ /tmp/
     - git clean -xfd
-    - ./scripts/.ci/download_and_install_sundials-3.1.sh
     - LD_LIBRARY_PATH=/usr/local/lib LIBRARY_PATH=/usr/local/lib CPLUS_INCLUDE_PATH=/usr/local/include PYKINSOL_SUNDIALS=3 ./scripts/ci.sh pykinsol
     - mv /tmp/deploy .
 
