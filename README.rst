@@ -26,7 +26,7 @@ pykinsol
 `Nonlinear system of equation <https://en.wikipedia.org/wiki/Nonlinear_system>`_
 solver algorithms from `kinsol <https://computation.llnl.gov/casc/sundials/description/description.html#descr_kinsol>`_ in the
 `SUNDIALS suite <https://computation.llnl.gov/casc/sundials/main.html>`_. ``pykinsol`` allows a user to numerically solve
-(systems of) non-linear equations. Note that not all functionality of KINSOL are currently exposed in the python wrapper. Additional functinoality is however easy to add if needed.
+(systems of) non-linear equations. Note that not all functionality of KINSOL are currently exposed in the python wrapper. Additional functionality is however easy to add if needed.
 
 You may also want to know that you can use ``pykinsol`` from
 `pyneqsys <https://github.com/bjodah/pyneqsys>`_
