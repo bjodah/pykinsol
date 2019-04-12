@@ -1,12 +1,7 @@
 #!/bin/bash -x
-PKG_NAME=${1:-${CI_REPO##*/}}
+PKG_NAME=${1:-${DRONE_REPO##*/}}
 rm -r /usr/local/lib/python*/dist-packages/${PKG_NAME}*  # pip uninstall is useless
 set -e
-
-if [[ "$CI_BRANCH" =~ ^v[0-9]+.[0-9]?* ]]; then
-    eval export ${PKG_NAME^^}_RELEASE_VERSION=\$CI_BRANCH
-    echo ${CI_BRANCH} | tail -c +2 > __conda_version__.txt
-fi
 
 for p in "${@:2}"
 do
@@ -26,5 +21,3 @@ CXX=clang++-6.0 CC=clang-6.0 CFLAGS='-fsanitize=address' python3 -m pip install 
 PYTHONPATH=$(pwd) ./scripts/run_tests.sh
 (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
 (cd examples/; ../scripts/render_index.sh *.html)
-
-
