@@ -5,7 +5,8 @@ set -e
 
 for p in "${@:2}"
 do
-export CPATH=$p/include:$CPATH LIBRARY_PATH=$p/lib:$LIBRARY_PATH LD_LIBRARY_PATH=$p/lib:$LD_LIBRARY_PATH
+    export CPATH=$p/include:$CPATH LIBRARY_PATH=$p/lib:$LIBRARY_PATH LD_LIBRARY_PATH=$p/lib:$LD_LIBRARY_PATH
+    ls $p/include  # DO-NOT-MERGE!
 done
 
 git clean -xfd
