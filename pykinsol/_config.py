@@ -1,5 +1,47 @@
+# This file is replaced by setup.py in distributions for tagged releases
+import logging
 import os
-import subprocess
+import pickle
+import shutil
+import sys
+import tempfile
+import warnings
+
+# type_of_prec below needs to have an identical definition in ._types
+type_of_prec = dict(single="float", double="double", extended='long double')
+
+try:
+    import appdirs
+except ImportError:
+    appdirs = None
+
+pipes = None
+
+if 'pytest' not in sys.modules:
+    try:
+        from wurlitzer import pipes
+    except ImportError:
+        pass
+
+if sys.version_info[0] == 2:
+    class TemporaryDirectory(object):
+        def __init__(self):
+            self.path = tempfile.mkdtemp()
+
+        def __enter__(self):
+            return self.path
+
+        def __exit__(self, exc, value, tb):
+            shutil.rmtree(self.path)
+else:
+    TemporaryDirectory = tempfile.TemporaryDirectory
+
+
+def _warn(msg):
+    if os.environ.get("PYCVODES_STRICT", '0') == '1':
+        raise RuntimeError(msg)
+    else:
+        warnings.warn(msg)
 
 
 def _compiles_ok(codestring):
