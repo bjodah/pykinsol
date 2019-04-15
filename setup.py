@@ -52,8 +52,9 @@ else:  # set `__version__` from _release.py:
 
 package_include = os.path.join(pkg_name, 'include')
 
-_cpp = _path_under_setup(pkg_name, '_kinsol.cpp')
-_pyx = _path_under_setup(pkg_name, '_kinsol.pyx')
+pyextmod = '_kinsol_numpy'
+_cpp = _path_under_setup(pkg_name, '%s.cpp' % pyextmod)
+_pyx = _path_under_setup(pkg_name, '%s.pyx' % pyextmod)
 if os.path.exists(_cpp):
     if os.path.exists(_pyx) and os.path.getmtime(_pyx) - 1e-6 >= os.path.getmtime(_cpp):
         USE_CYTHON = True
@@ -79,8 +80,8 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
     logger = logging.getLogger(__name__)
     logger.info("Config for pykinsol: %s" % str(env))
     ext = '.pyx' if USE_CYTHON else '.cpp'
-    sources = [os.path.join(pkg_name, '_kinsol'+ext)]
-    ext_modules = [Extension('%s._kinsol' % pkg_name, sources)]
+    sources = [os.path.join(pkg_name, pyextmod+ext)]
+    ext_modules = [Extension('%s.%s' % (pkg_name, pyextmod), sources)]
     if USE_CYTHON:
         from Cython.Build import cythonize
         ext_modules = cythonize(ext_modules, include_path=[
