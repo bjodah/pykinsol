@@ -6,7 +6,7 @@ set -e
 for p in "${@:2}"
 do
     export CPATH=$p/include:$CPATH LIBRARY_PATH=$p/lib:$LIBRARY_PATH LD_LIBRARY_PATH=$p/lib:$LD_LIBRARY_PATH
-    ls $p/include  # DO-NOT-MERGE!
+    ls $p/include/kinsol  # DO-NOT-MERGE! (is kinsol_direct.h there?)
 done
 
 git clean -xfd
