@@ -1,11 +1,11 @@
 #!/bin/bash -xeu
 # Usage:
 #
-#    $ ./scripts/post_release.sh v1.2.3 myserver githubuser
+#    $ ./scripts/post_release.sh v1.2.3 myserver.univeristy.edu
 #
 VERSION=${1#v}
 SERVER=$2
-GITHUBUSER=$3
+
 PKG=$(find . -maxdepth 2 -name __init__.py -print0 | xargs -0 -n1 dirname | xargs basename)
 PKG_UPPER=$(echo $PKG | tr '[:lower:]' '[:upper:]')
 SDIST_FILE=dist/${PKG}-$VERSION.tar.gz
@@ -19,18 +19,22 @@ if [[ -d "dist/conda-recipe-$VERSION" ]]; then
 fi
 cp -r conda-recipe/ dist/conda-recipe-$VERSION
 sed -i -E \
-    -e "s/\{\% set version(.+)/\{\% set version = \"$VERSION\" \%\}\n\{\% set sha256 = \"$SHA256\" \%\}/" \
-    -e "s/git_url:(.+)/fn: \{\{ name \}\}-\{\{ version \}\}.tar.gz\n  url: https:\/\/pypi.io\/packages\/source\/\{\{ name\[0\] \}\}\/\{\{ name \}\}\/\{\{ name \}\}-\{\{ version \}\}.tar.gz\n  sha256: \{\{ sha256 \}\}/" \
+    -e "s/git_url:(.+)/fn: \{\{ name \}\}-\{\{ version \}\}.tar.gz\n  url: https:\/\/pypi.io\/packages\/source\/\{\{ name\[0\] \}\}\/\{\{ name \}\}\/\{\{ name \}\}-\{\{ version \}\}.tar.gz\n  sha256: \"$SHA256\"/" \
+    -e "/set version/d" \
+    -e "/set number/d" \
+    -e "/if number/d" \
+    -e "s/.*endif*./\{% set version = \"$VERSION\" /" \
     -e "/cython/d" \
     dist/conda-recipe-$VERSION/meta.yaml
 
-./scripts/update-gh-pages.sh v$VERSION
-
-# Specific for this project:
+ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-packages'
+for CONDA_PY in 27 35 36; do
+    # https://github.com/bjodah/anfilte
+    anfilte-build . dist/conda-recipe-$VERSION dist/ --python ${CONDA_PY}
+    scp dist/linux-64/${PKG}-${VERSION}-py${CONDA_PY}*.bz2 $PKG@$SERVER:~/public_html/conda-packages/
+done
+ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-recipes'
 scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
 scp "$SDIST_FILE" "$PKG@$SERVER:~/public_html/releases/"
-for CONDA_PY in 2.7 3.5 3.6; do
-    for CONDA_NPY in 1.13; do
-        ssh $PKG@$SERVER "source /etc/profile; conda-build --python $CONDA_PY --numpy $CONDA_NPY ~/public_html/conda-recipes/conda-recipe-$VERSION/"
-    done
-done
+
+./scripts/update-gh-pages.sh v$VERSION
