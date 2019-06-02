@@ -17,8 +17,7 @@ python3 setup.py sdist
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
 (cd /; python3 -c "from pykinsol import get_include as gi; import os; assert 'kinsol_numpy.pxd' in os.listdir(gi())")
 
-CXX=clang++-8 CC=clang-8 CFLAGS='-fsanitize=address' python3 -m pip install --force-reinstall .
-export LD_PRELOAD=/usr/lib/llvm-8/lib/clang/8.0.1/lib/linux/libclang_rt.asan-x86_64.so
+export LD_PRELOAD=$PY_LD_PRELOAD:$LD_PRELOAD
 #export PYTHONPATH=$(pwd)
 ./scripts/run_tests.sh
 (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
