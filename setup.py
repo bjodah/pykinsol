@@ -89,11 +89,11 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         ])
     ext_modules[0].language = 'c++'
     ext_modules[0].include_dirs = [np.get_include(), package_include]
+
     if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
         _USE_LAPACK = False
     else:
         _USE_LAPACK = True
-        ext_modules[0].libraries += env['LAPACK'].split(',')
 
     ext_modules[0].define_macros += [
         ('PYKINSOL_NO_KLU', env.get('NO_KLU', '0')),
@@ -102,6 +102,8 @@ if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
 
     if env['SUNDIALS_LIBS']:
         ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
+    if _USE_LAPACK:
+        ext_modules[0].libraries += env['LAPACK'].split(',')
 
 
 class BuildExt(build_ext):
