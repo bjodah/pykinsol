@@ -57,7 +57,6 @@ fi
 if [[ -d $tmpdir/.gh-pages-skeleton ]]; then
     cp -r $tmpdir/.gh-pages-skeleton/. .
 fi
-touch .nojekyll
 if [[ "$tag" == v* ]]; then
     if [[ -L latest ]]; then
         rm latest

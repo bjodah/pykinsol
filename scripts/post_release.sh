@@ -27,14 +27,14 @@ sed -i -E \
     -e "/cython/d" \
     dist/conda-recipe-$VERSION/meta.yaml
 
+ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-recipes'
+scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
+scp "$SDIST_FILE" "$PKG@$SERVER:~/public_html/releases/"
+./scripts/update-gh-pages.sh v$VERSION
+
 ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-packages'
 for CONDA_PY in 27 35 36; do
     # https://github.com/bjodah/anfilte
     anfilte-build . dist/conda-recipe-$VERSION dist/ --python ${CONDA_PY}
     scp dist/linux-64/${PKG}-${VERSION}-py${CONDA_PY}*.bz2 $PKG@$SERVER:~/public_html/conda-packages/
 done
-ssh $PKG@$SERVER 'mkdir -p ~/public_html/conda-recipes'
-scp -r dist/conda-recipe-$VERSION/ $PKG@$SERVER:~/public_html/conda-recipes/
-scp "$SDIST_FILE" "$PKG@$SERVER:~/public_html/releases/"
-
-./scripts/update-gh-pages.sh v$VERSION
