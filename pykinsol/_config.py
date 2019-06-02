@@ -71,6 +71,7 @@ def _compiles_ok(codestring):
             _ok = True
     return _ok, out
 
+
 def _get_sun_precision_and_realtype():
     codestring = """#include <sundials/sundials_config.h>
                     #ifndef SUNDIALS_{0}_PRECISION
