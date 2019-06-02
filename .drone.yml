@@ -34,7 +34,7 @@ pipeline:
       - ASAN_OPTIONS=symbolize=1,detect_leaks=1
       - CC=clang-8
       - CXX=clang++-8
-      - CFLAGS=-fsanitize=address -g -fno-omit-frame-pointer -fsized-deallocation -Werror
+      - CFLAGS=-fsanitize=address -g -fno-omit-frame-pointer -fsized-deallocation
       - PY_LD_PRELOAD=/usr/lib/llvm-8/lib/clang/8.0.1/lib/linux/libclang_rt.asan-x86_64.so
     commands:
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
