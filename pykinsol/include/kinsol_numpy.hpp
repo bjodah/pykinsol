@@ -26,7 +26,7 @@ namespace kinsol_numpy{
                          PyObject *py_x_scale, PyObject *py_f_scale, PyObject * py_constraints){
             std::clock_t cputime0 = std::clock();
             auto solver = kinsol_cxx::Solver();
-            solver.init(kinsol_cxx::f_cb<PyKinsol>, SVectorView(this->nu));
+            solver.init(kinsol_cxx::f_cb<PyKinsol>, this->nu);
             solver.set_user_data(static_cast<void*>(this));
             if (ml == -1 && mu == -1){
                 solver.set_linear_solver_to_dense(this->nu);

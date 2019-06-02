@@ -1,10 +1,21 @@
 #pragma once
 #include <cstring> // std::memcpy
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
-
-
+#include <sundials/sundials_config.h>
 namespace sundials_cxx {
-
+#if SUNDIALS_VERSION_MAJOR >= 3
+    const int version_major = SUNDIALS_VERSION_MAJOR;
+    const int version_minor = SUNDIALS_VERSION_MINOR;
+    const int version_patch = SUNDIALS_VERSION_PATCH;
+#else
+#  if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+    const int version_major = 2;
+    const int version_minor = 7;
+    const int version_patch = 0;
+#  else
+#    error "Unkown sundials version"
+#  endif
+#endif
     namespace nvector_serial {
         struct VectorBase_{
             N_Vector n_vec {nullptr};
@@ -43,7 +54,7 @@ namespace sundials_cxx {
             // Vector owns the memory containing data
             Vector(long int n) :
                 VectorBase_(N_VNew_Serial(n)) {}
-            Vector(const VectorBase_& v)
+            Vector(const Vector& v)
                 : VectorBase_(N_VNew_Serial(v.size())) { // copy-constructor
                 v.dump(get_data_ptr());
             }

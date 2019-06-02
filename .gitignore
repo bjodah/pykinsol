@@ -18,3 +18,4 @@ cython_debug/
 .coverage
 htmlcov/
 pykinsol/_kinsol_numpy.cpp
+tmp/
