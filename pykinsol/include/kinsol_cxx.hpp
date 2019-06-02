@@ -1,24 +1,85 @@
 #pragma once
 
 #include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 4
+#  include "sunnonlinsol/sunnonlinsol_newton.h"
+#  include "sunnonlinsol/sunnonlinsol_fixedpoint.h"
+#else
+#  define KINLS_SUCCESS KINSPILS_SUCCESS
+#  define KINLS_MEM_NULL KINSPILS_MEM_NULL
+#  define KINLS_LMEM_NULL KINSPILS_LMEM_NULL
+#  define KINLS_ILL_INPUT KINSPILS_ILL_INPUT
+#  define KINLS_MEM_FAIL KINSPILS_MEM_FAIL
+#endif
+#if !defined(PYKINSOL_NO_KLU)
+#  if defined(SUNDIALS_KLU)
+#    define PYKINSOL_NO_KLU 0
+#  else
+#    define PYKINSOL_NO_KLU 1
+#  endif
+#endif
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
-#include <kinsol/kinsol_direct.h>
-#include <kinsol/kinsol.h>
+#include <kinsol/kinsol_spils.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
-#include <sunmatrix/sunmatrix_dense.h>
-#include <sunmatrix/sunmatrix_band.h>
-#include <sunlinsol/sunlinsol_lapackdense.h>
-#include <sunlinsol/sunlinsol_lapackband.h>
+#  include <kinsol/kinsol_direct.h> /* KINSOL fcts., KIN_BDF, KIN_ADAMS */
+#  include <sunmatrix/sunmatrix_dense.h>
+#  include <sunmatrix/sunmatrix_band.h>
+#  include <sunmatrix/sunmatrix_sparse.h>
+#  if !defined(PYKINSOL_NO_LAPACK)
+#    if defined(SUNDIALS_BLAS_LAPACK)
+#      define PYKINSOL_NO_LAPACK 0
+#    else
+#      define PYKINSOL_NO_LAPACK 1
+#    endif
+#  endif
+#  if PYKINSOL_NO_LAPACK == 1
+#    include <sunlinsol/sunlinsol_dense.h>
+#    include <sunlinsol/sunlinsol_band.h>
+#  else
+#    include <sunlinsol/sunlinsol_lapackdense.h>
+#    include <sunlinsol/sunlinsol_lapackband.h>
+#  endif
+#  if PYKINSOL_NO_KLU != 1
+#      include <sunlinsol/sunlinsol_klu.h>
+#  endif
+#  include <sunlinsol/sunlinsol_spgmr.h>
+#  include <sunlinsol/sunlinsol_spbcgs.h>
+#  include <sunlinsol/sunlinsol_sptfqmr.h>
 #else
-#if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
-#include <kinsol/kinsol_lapack.h>
-#else
-#error "Unkown sundials version"
+#  if defined(SUNDIALS_PACKAGE_VERSION)   /* == 2.7.0 */
+#    include <kinsol/kinsol_sparse.h>
+#    include <kinsol/kinsol_spgmr.h>
+#    include <kinsol/kinsol_spbcgs.h>
+#    include <kinsol/kinsol_sptfqmr.h>
+#    if !defined(PYKINSOL_NO_LAPACK)
+#      if defined(SUNDIALS_BLAS_LAPACK)
+#        define PYKINSOL_NO_LAPACK 0
+#      else
+#        define PYKINSOL_NO_LAPACK 1
+#      endif
+#    endif
+#    if PYKINSOL_NO_LAPACK == 1
+#      include <kinsol/kinsol_dense.h>
+#      include <kinsol/kinsol_band.h>
+#    else
+#      include <kinsol/kinsol_lapack.h>       /* prototype for KINDense */
+#    endif
+#    if PYKINSOL_NO_KLU != 1
+#      include <kinsol/kinsol_klu.h>
+#    endif
+#    define SUNTRUE TRUE
+#    define SUNFALSE FALSE
+#  else
+#    error "Unkown sundials version"
+#  endif
 #endif
-#endif
+#include <kinsol/kinsol.h>
 
 
 namespace kinsol_cxx {
+    namespace {
+        template<class T> void ignore( const T& ) { }
+    }
 
     using SVector = sundials_cxx::nvector_serial::Vector; // serial vector
     using SVectorView = sundials_cxx::nvector_serial::VectorView; // serial vector
@@ -37,7 +98,7 @@ namespace kinsol_cxx {
         }
     }
 
-    class Solver{ // Thin wrapper class of KINSolver in KINODES
+    class Solver{ // Thin wrapper class of KINSolver in KINSOL
 #if SUNDIALS_VERSION_MAJOR >= 3
         SUNMatrix A_ = nullptr;
         SUNLinearSolver LS_ = nullptr;
@@ -81,7 +142,10 @@ namespace kinsol_cxx {
         void init(KINSysFn cb, SVector tmpl) {
             this->init(cb, tmpl.n_vec);
         }
-        int solve(SVectorView u, int strategy, SVector u_scale, SVector f_scale){
+        void init(KINSysFn cb, int ny) {
+            this->init(cb, SVector(ny));
+        }
+        int solve(SVectorView u, int strategy, SVectorView u_scale, SVectorView f_scale){
             return KINSol(this->mem, u.n_vec, strategy, u_scale.n_vec, f_scale.n_vec);
         }
         void check_solve_flag(int flag, bool steptol_fail=true) {
@@ -199,14 +263,16 @@ namespace kinsol_cxx {
             else
                 check_flag(flag);
         }
-        void set_constraints(SVector constraints){
-            int flag = KINSetConstraints(this->mem, constraints.n_vec);
+        void set_constraints(N_Vector constraints){
+            int flag = KINSetConstraints(this->mem, constraints);
             if (flag == KIN_ILL_INPUT)
                 throw std::runtime_error("The constraint vector contains illegal values.");
             else
                 check_flag(flag);
         }
-
+        void set_constraints(SVectorView constraints){
+            set_constraints(constraints.n_vec);
+        }
 
         // user data
         void set_user_data(void *user_data){
@@ -261,30 +327,63 @@ namespace kinsol_cxx {
         }
 
         // banded jacobian
-        void set_linear_solver_to_banded(int ny, int mupper, int mlower){
-            int flag;
+        void set_linear_solver_to_banded(int N, int mupper, int mlower){
+            int status;
 #if SUNDIALS_VERSION_MAJOR >= 3
+            ignore(N);
             if (A_ == nullptr){
                 if (A_)
                     throw std::runtime_error("matrix already set");
-                A_ = SUNBandMatrix(ny, mupper, mlower, std::min(ny-1, mlower+mupper));
+                A_ = SUNBandMatrix(N, mupper, mlower
+#  if SUNDIALS_VERSION_MAJOR < 4
+                                   , mlower+mupper
+#  endif
+                    );
                 if (!A_)
                     throw std::runtime_error("SUNDenseMatrix failed.");
             }
             if (LS_ == nullptr){
                 if (LS_)
                     throw std::runtime_error("linear solver already set");
-                LS_ = SUNLapackBand(y_, A_);
+#  if PYKINSOL_NO_LAPACK == 1
+                LS_ =
+                    # if SUNDIALS_VERSION_MAJOR >= 4
+                    SUNLinSol_Band
+                    # else
+                    SUNBandLinearSolver
+                    #endif
+                    (y_, A_);
+#  else
+                LS_ =
+                    # if SUNDIALS_VERSION_MAJOR >= 4
+                    SUNLinSol_LapackBand
+                    #else
+                    SUNLapackBand
+                    #endif
+                    (y_, A_);
+#  endif
                 if (!LS_)
                     throw std::runtime_error("SUNDenseLinearSolver failed.");
             }
-            flag = KINDlsSetLinearSolver(this->mem, LS_, A_);
-            if (flag < 0)
+            status = KINDlsSetLinearSolver(this->mem, LS_, A_);
+            if (status < 0)
                 throw std::runtime_error("KINDlsSetLinearSolver failed.");
 #else
-            flag = KINLapackBand(this->mem, ny, mupper, mlower);
-            if (flag != KINDLS_SUCCESS)
-                throw std::runtime_error("KINLapackBand failed");
+            status =
+#  if PYKINSOL_NO_LAPACK == 1
+                KINBand(this->mem, N, mupper, mlower)
+#  else
+                KINLapackBand(this->mem, N, mupper, mlower)
+#  endif
+                ;
+            if (status != KINDLS_SUCCESS)
+                throw std::runtime_error(
+#  if PYKINSOL_NO_LAPACK == 1
+                    "KINBand failed"
+#  else
+                    "KINLapackBand failed"
+#  endif
+                );
 #endif
         }
         void set_band_jac_fn(
@@ -386,4 +485,4 @@ namespace kinsol_cxx {
         return 0;
     }
 
-} // namespace cvodes_cxx
+} // namespace kinsol_cxx

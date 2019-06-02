@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Tested with Sundials 2.6.2 & 2.7.0
 
 import io
+import logging
 import os
 import re
 import shutil
-import sys
 import subprocess
+import sys
 import warnings
-from setuptools import setup, Extension
+from setuptools import setup
+from setuptools.command.build_ext import build_ext
+from setuptools.extension import Extension
 
 
 pkg_name = 'pykinsol'
@@ -25,41 +27,9 @@ release_py_path = _path_under_setup(pkg_name, '_release.py')
 config_py_path = _path_under_setup(pkg_name, '_config.py')
 
 
-USE_CYTHON = os.path.exists('pykinsol/_kinsol_numpy.pyx')  # not in sdist
-package_include = os.path.join(pkg_name, 'include')
-
-# Cythonize .pyx file if it exists (not in source distribution)
-ext_modules = []
-
-if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
-        '--help-commands', 'egg_info', 'clean', '--version'):
-    import numpy as np
-    env = None  # silence pyflakes, 'env' is actually set on the next line
-    exec(open(config_py_path).read())
-    for k, v in list(env.items()):
-        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
-
-    ext = '.pyx' if USE_CYTHON else '.cpp'
-    sources = [os.path.join(pkg_name, '_kinsol_numpy'+ext)]
-    ext_modules = [Extension('%s._kinsol_numpy' % pkg_name, sources)]
-    if USE_CYTHON:
-        from Cython.Build import cythonize
-        ext_modules = cythonize(ext_modules, include_path=[package_include])
-    ext_modules[0].language = 'c++'
-    ext_modules[0].extra_compile_args = ['-std=c++11']
-    ext_modules[0].include_dirs = [np.get_include(), package_include]
-    ext_modules[0].libraries += env['LAPACK'].split(',') + env['SUNDIALS_LIBS'].split(',')
-
 _version_env_var = '%s_RELEASE_VERSION' % pkg_name.upper()
 RELEASE_VERSION = os.environ.get(_version_env_var, '')
 
-if os.environ.get('CONDA_BUILD', '0') == '1':
-    # http://conda.pydata.org/docs/build.html#environment-variables-set-during-the-build-process
-    try:
-        RELEASE_VERSION = 'v' + open(
-            '__conda_version__.txt', 'rt').readline().rstrip()
-    except IOError:
-        pass
 if len(RELEASE_VERSION) > 1:
     if RELEASE_VERSION[0] != 'v':
         raise ValueError("$%s does not start with 'v'" % _version_env_var)
@@ -77,10 +47,89 @@ else:  # set `__version__` from _release.py:
         else:
             if 'develop' not in sys.argv:
                 warnings.warn("Using git to derive version: dev-branches may compete.")
-                __version__ = re.sub('v([0-9.]+)-(\d+)-(\w+)', r'\1.post\2+\3', _git_version)  # .dev < '' < .post
+                _ver_tmplt = r'\1.post\2' if os.environ.get('CONDA_BUILD', '0') == '1' else r'\1.post\2+\3'
+                __version__ = re.sub(r'v([0-9.]+)-(\d+)-(\S+)', _ver_tmplt, _git_version)  # .dev < '' < .post
+
+package_include = os.path.join(pkg_name, 'include')
+
+pyextmod = '_kinsol_numpy'
+_cpp = _path_under_setup(pkg_name, '%s.cpp' % pyextmod)
+_pyx = _path_under_setup(pkg_name, '%s.pyx' % pyextmod)
+if os.path.exists(_cpp):
+    if os.path.exists(_pyx) and os.path.getmtime(_pyx) - 1e-6 >= os.path.getmtime(_cpp):
+        USE_CYTHON = True
+    else:
+        USE_CYTHON = False
+else:
+    if os.path.exists(_pyx):
+        USE_CYTHON = True
+    else:
+        raise ValueError("Neither pyx nor cpp file found")
+
+
+ext_modules = []
+
+if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
+        '--help-commands', 'egg_info', 'clean', '--version'):
+    import numpy as np
+    env = None  # silence pyflakes, 'env' is actually set on the next line
+    _PYKINSOL_IGNORE_CFG = 1  # avoid using cached config upon running setup.py
+    exec(open(config_py_path).read())
+    for k, v in list(env.items()):
+        env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
+    logger = logging.getLogger(__name__)
+    logger.info("Config for pykinsol: %s" % str(env))
+    ext = '.pyx' if USE_CYTHON else '.cpp'
+    sources = [os.path.join(pkg_name, pyextmod+ext)]
+    ext_modules = [Extension('%s.%s' % (pkg_name, pyextmod), sources)]
+    if USE_CYTHON:
+        from Cython.Build import cythonize
+        ext_modules = cythonize(ext_modules, include_path=[
+            package_include,
+        ])
+    ext_modules[0].language = 'c++'
+    ext_modules[0].include_dirs = [np.get_include(), package_include]
+
+    if env.get('NO_LAPACK', '0') == '1' or env['LAPACK'] in ('', '0'):
+        _USE_LAPACK = False
+    else:
+        _USE_LAPACK = True
+
+    ext_modules[0].define_macros += [
+        ('PYKINSOL_NO_KLU', env.get('NO_KLU', '0')),
+        ('PYKINSOL_NO_LAPACK', '0' if _USE_LAPACK else '1'),
+    ]
+
+    if env['SUNDIALS_LIBS']:
+        ext_modules[0].libraries += env['SUNDIALS_LIBS'].split(',')
+    if _USE_LAPACK:
+        ext_modules[0].libraries += env['LAPACK'].split(',')
+
+
+class BuildExt(build_ext):
+    """A custom build extension for adding compiler-specific options."""
+    c_opts = {
+        'msvc': ['/EHsc'],
+        'unix': [],
+    }
+
+    def build_extensions(self):
+        ct = self.compiler.compiler_type
+        opts = self.c_opts.get(ct, [])
+        if ct == 'unix':
+            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
+            opts.append('--std=c++11')
+            if sys.platform == 'darwin' and re.search("clang", self.compiler.compiler[0]) is not None:
+                opts += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+        elif ct == 'msvc':
+            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
+        for ext in self.extensions:
+            ext.extra_compile_args = opts
+        build_ext.build_extensions(self)
+
 
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     'License :: OSI Approved :: BSD License',
     'Operating System :: OS Independent',
     'Topic :: Scientific/Engineering',
@@ -104,7 +153,6 @@ _author, _author_email = io.open(_path_under_setup('AUTHORS'), 'rt', encoding='u
 setup_kwargs = dict(
     name=pkg_name,
     version=__version__,
-
     description=short_description,
     long_description=long_description,
     classifiers=classifiers,
@@ -117,13 +165,14 @@ setup_kwargs = dict(
     install_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     setup_requires=['numpy'] + (['cython'] if USE_CYTHON else []),
     extras_require={'docs': ['Sphinx', 'sphinx_rtd_theme', 'numpydoc']},
-    ext_modules=ext_modules
+    ext_modules=ext_modules,
+    cmdclass={'build_ext': BuildExt}
 )
 
 if __name__ == '__main__':
     try:
         if TAGGED_RELEASE:
-            # Same commit should generate different sdist
+            # Same commit should generate different sdist files
             # depending on tagged version (set PYKINSOL_RELEASE_VERSION)
             # this will ensure source distributions contain the correct version
             shutil.move(release_py_path, release_py_path+'__temp__')

@@ -1,4 +1,4 @@
 #!/bin/bash
-if git grep "DO-NOT-MERGE!" -R . --exclude $(basename $0); then
+if git grep --exclude $(basename $0) "DO-NOT-MERGE!" -R .; then
     exit 1
 fi
