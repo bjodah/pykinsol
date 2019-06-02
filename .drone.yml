@@ -3,15 +3,15 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-      - ./ci_cache/sund-3.2.1-lapack-klu
-      - ./ci_cache/sund-2.7.0-lapack-klu
+      - ./ci_cache/pyusrb
+      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
     ttl: 90  # liftetime in days
 
-  test-sund-3.2.1-klu:
+  test-sund-4.1.0-klu:
     group: testing
-    image: bjodah/bjodahimg18:v1.6
+    image: bjodah/bjodahimg18:v2.1
     environment:
       - OMP_NUM_THREADS=1
       - ANYODE_NUM_THREADS=2
@@ -19,33 +19,38 @@ pipeline:
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
     commands:
-      - export SUNDBASE=$(pwd)/ci_cache/sund-3.2.1-klu
-      - if [ ! -d $SUNDBASE ]; then .ci/get_sundials.sh 3.2.1 $SUNDBASE -DLAPACK_ENABLE:BOOL=ON -DSUNDIALS_INDEX_SIZE=32 -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
-      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol $SUNDBASE"
+      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-4.1.0-klu-lapack"
       - ./scripts/prepare_deploy.sh
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
       - ./scripts/grep-for-merge-blocking-token.sh
       - ./scripts/grep-for-binary-data.sh
 
-  test-sund-2.7.0-klu:
+  test-sund-3.2.1-klu:
     group: testing
-    image: bjodah/bjodahimg18:v1.6
+    image: bjodah/bjodahimg18:v2.1
     environment:
       - OMP_NUM_THREADS=1
-      - ANYODE_NUM_THREADS=2
       - CPLUS_INCLUDE_PATH=/usr/include/suitesparse
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
     commands:
-      - export SUNDBASE=$(pwd)/ci_cache/sund-2.7.0-klu
-      - if [ ! -d $SUNDBASE ]; then .ci/get_sundials.sh 2.7.0 $SUNDBASE -DLAPACK_ENABLE:BOOL=ON -DKLU_ENABLE:BOOL=ON -DKLU_INCLUDE_DIR=/usr/include/suitesparse -DKLU_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu; fi
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
-      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol $SUNDBASE"
-      - ./scripts/prepare_deploy.sh
+      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-3.2.1-klu-lapack"
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-      - ./scripts/grep-for-merge-blocking-token.sh
-      - ./scripts/grep-for-binary-data.sh
+
+  test-sund-2.7.0-klu:
+    group: testing
+    image: bjodah/bjodahimg18:v2.1
+    environment:
+      - OMP_NUM_THREADS=1
+      - CPLUS_INCLUDE_PATH=/usr/include/suitesparse
+      - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+      - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+    commands:
+      - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
+      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-2.7.0-klu-lapack"
+      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
 
 deploy:
 
@@ -53,8 +58,8 @@ deploy:
     image: drillster/drone-volume-cache
     rebuild: true
     mount:
-      - ./ci_cache/sund-3.2.1-lapack-klu
-      - ./ci_cache/sund-2.7.0-lapack-klu
+      - ./ci_cache/pyusrb
+      - ./ci_cache/pip_cache
     volumes:
       - /tmp/cache:/cache
 
