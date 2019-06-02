@@ -62,6 +62,7 @@ pipeline:
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LAPACK=lapack,blas
+      - DISTUTILS_DEBUG=1
     commands:
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
       - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-2.7.0-klu-lapack"
