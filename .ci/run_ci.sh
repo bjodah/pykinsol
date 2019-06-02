@@ -13,7 +13,7 @@ done
 git clean -xfd
 
 python3 setup.py sdist
-(cd dist/; python3 -m pip install $PKG_NAME-$(DISTUTILS_DEBUG=0 python3 ../setup.py --version).tar.gz)
+(cd dist/; python3 -m pip install $PKG_NAME-$(unset DISTUTILS_DEBUG; python3 ../setup.py --version).tar.gz)
 export LD_PRELOAD=$PY_LD_PRELOAD:$LD_PRELOAD
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
 (cd /; python3 -c "from pykinsol import get_include as gi; import os; assert 'kinsol_numpy.pxd' in os.listdir(gi())")
