@@ -39,10 +39,6 @@ pipeline:
     commands:
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
       - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-4.1.0-klu-lapack"
-      - ./scripts/prepare_deploy.sh
-      - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
-      - ./scripts/grep-for-merge-blocking-token.sh
-      - ./scripts/grep-for-binary-data.sh
 
   test-sund-3.2.1:
     group: testing
@@ -65,6 +61,7 @@ pipeline:
       - CPLUS_INCLUDE_PATH=/usr/include/suitesparse
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+      - LAPACK=lapack,blas
     commands:
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
       - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-2.7.0-klu-lapack"
