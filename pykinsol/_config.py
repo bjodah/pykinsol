@@ -161,7 +161,7 @@ def _attempt_compilation():
                 _kinsol_lapack = 'kinsol/kinsol_lapack.h'
                 _wrapper_ok, _wrapper_out = _compiles_ok("#include <%s>" % _kinsol_lapack)
                 if not _wrapper_ok:
-                    _warn("Failed to inculde <%s> even though it should work" % kinsol_lapack)
+                    _warn("Failed to inculde <%s> even though it should work" % _kinsol_lapack)
                     _lapack_ok = False
             else:
                 logger.info("lapack not enabled in the sundials (<3) distribution:\n%s" % _lapack_out)
