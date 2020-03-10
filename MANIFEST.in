@@ -1,4 +1,5 @@
 recursive-include */include *.hpp *.pxd
+include pykinsol/_kinsol_numpy.pyx
 include AUTHORS
 include CHANGES.rst
 include LICENSE
