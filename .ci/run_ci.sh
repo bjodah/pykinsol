@@ -17,7 +17,8 @@ if [ $NO_PIP == 1 ]; then
     python3 setup.py build_ext -i
     export PYTHONPATH=$(pwd)
 else
-    (cd dist/; python3 -m pip install $PKG_NAME-$(unset DISTUTILS_DEBUG; python3 ../setup.py --version).tar.gz)
+    PKG_VERSION=$(unset DISTUTILS_DEBUG; python3 setup.py --version)
+    (cd dist/; python3 -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
 fi
 export LD_PRELOAD=$PY_LD_PRELOAD:$LD_PRELOAD
 (cd /; python3 -m pytest --pyargs $PKG_NAME)
