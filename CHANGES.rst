@@ -1,3 +1,7 @@
+v0.1.5
+======
+- Update setup.py
+
 v0.1.3
 ======
 - Better detection of Sundials 3
