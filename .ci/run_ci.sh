@@ -1,7 +1,7 @@
 #!/bin/bash -x
 PKG_NAME=${1:-${DRONE_REPO##*/}}
 rm -r /usr/local/lib/python*/dist-packages/${PKG_NAME}*  # pip uninstall is useless
-( cd /tmp; if ! python -c "import $PKG_NAME"; then >&2 echo "Couldn't uninstall"; exit 1; fi )
+( cd /tmp; if ! ${PYTHON:-python3} -c "import $PKG_NAME"; then >&2 echo "Couldn't uninstall"; exit 1; fi )
 set -e
 
 for p in "${@:2}"
