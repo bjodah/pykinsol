@@ -9,9 +9,9 @@ pipeline:
       - /tmp/cache:/cache
     ttl: 90  # liftetime in days
 
-  test-sund-5.1.0:
+  test-sund-5.3.0:
     group: testing
-    image: bjodah/bjodahimg20dev:v1.0.3
+    image: bjodah/bjodahimg20dev:v1.2.0
     environment:
       - OMP_NUM_THREADS=1
       - CPLUS_INCLUDE_PATH=/usr/include/suitesparse
@@ -19,15 +19,15 @@ pipeline:
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
     commands:
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
-      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-5.1.0-klu-lapack"
+      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-5.3.0-klu-lapack"
       - ./scripts/prepare_deploy.sh
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
       - ./scripts/grep-for-merge-blocking-token.sh
       - ./scripts/grep-for-binary-data.sh
 
-  test-sund-5.1.0-asan:
+  test-sund-5.3.0-asan:
     group: testing
-    image: bjodah/bjodahimg20dev:v1.0.3
+    image: bjodah/bjodahimg20dev:v1.2.0
     environment:
       - CPATH=/usr/include/suitesparse
       - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-10/bin/llvm-symbolizer
@@ -38,7 +38,7 @@ pipeline:
       - PY_LD_PRELOAD=/usr/lib/llvm-10/lib/clang/10.0.0/lib/linux/libclang_rt.asan-x86_64.so
     commands:
       - mkdir -p $HOME/.config/pip/; bash -c 'echo -e "[global]\nno-cache-dir = false\ndownload-cache = $(pwd)/ci_cache/pip_cache" >$HOME/.config/pip/pip.conf'
-      - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-5.1.0-klu-lapack"
+      - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-5.3.0-klu-lapack"
 
 deploy:
 
