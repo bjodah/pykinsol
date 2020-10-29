@@ -1,0 +1,19 @@
+pykinsol package
+================
+
+.. automodule:: pykinsol
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Submodules
+----------
+
+pykinsol.core module
+--------------------
+
+.. automodule:: pykinsol.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
