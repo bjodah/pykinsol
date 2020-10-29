@@ -295,7 +295,21 @@ namespace kinsol_cxx {
             if (LS_ == nullptr){
                 if (LS_)
                     throw std::runtime_error("linear solver already set");
-                LS_ = SUNLapackDense(y_, A_);
+                LS_ =
+# if PYKINSOL_NO_LAPACK == 1
+#  if SUNDIALS_VERSION_MAJOR >= 4
+                SUNLinSol_Dense
+#  else
+                SUNDenseLinearSolver
+#  endif
+# else
+#  if SUNDIALS_VERSION_MAJOR >= 4
+                SUNLinSol_LapackDense
+#  else
+                SUNLapackDense
+#  endif
+# endif
+                    (y_, A_);
                 if (!LS_)
                     throw std::runtime_error("SUNDenseLinearSolver failed.");
             }
