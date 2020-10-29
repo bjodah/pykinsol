@@ -1,3 +1,7 @@
+v0.1.6
+======
+- Fix compilation without LAPACK
+
 v0.1.5
 ======
 - Update setup.py
