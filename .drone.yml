@@ -2,7 +2,7 @@ pipeline:
 
   test-sund-5.4.0:
     group: testing
-    image: bjodah/bjodahimg20dev:2.1.0
+    image: bjodah/bjodahimg20dot:2.1.0.2
     environment:
       - CC=gcc-10
       - CXX=g++-10
@@ -19,7 +19,7 @@ pipeline:
 
   test-sund-5.4.0-extended:
     group: testing
-    image: bjodah/bjodahimg20dev:2.1.0
+    image: bjodah/bjodahimg20dot:2.1.0.2
     environment:
       - CC=gcc-10
       - CXX=g++-10
@@ -32,7 +32,7 @@ pipeline:
 
   test-sund-5.4.0-asan:
     group: testing
-    image: bjodah/bjodahimg20dev:2.1.0
+    image: bjodah/bjodahimg20dot:2.1.0.2
     environment:
       - CPATH=/usr/include/suitesparse
       - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-10/bin/llvm-symbolizer
