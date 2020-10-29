@@ -35,12 +35,12 @@ pipeline:
     image: bjodah/bjodahimg20dot:2.1.0.3
     environment:
       - CPATH=/usr/include/suitesparse
-      - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-10/bin/llvm-symbolizer
+      - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-11/bin/llvm-symbolizer
       - ASAN_OPTIONS=symbolize=1,detect_leaks=0
       - CC=clang-11
       - CXX=clang++-11
       - CFLAGS=-fsanitize=address -g -fno-omit-frame-pointer -fsized-deallocation
-      - PY_LD_PRELOAD=/usr/lib/llvm-10/lib/clang/10.0.0/lib/linux/libclang_rt.asan-x86_64.so
+      - PY_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
     commands:
       - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-5.4.0-klu-lapack"
 
