@@ -12,17 +12,17 @@ done
 
 git clean -xfd
 
-python3 setup.py sdist
+${PYTHON:-python3} setup.py sdist
 if [ $NO_PIP == 1 ]; then
-    python3 setup.py build_ext -i
+    ${PYTHON:-python3} setup.py build_ext -i
     export PYTHONPATH=$(pwd)
 else
-    PKG_VERSION=$(unset DISTUTILS_DEBUG; python3 setup.py --version)
-    (cd dist/; python3 -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
+    PKG_VERSION=$(unset DISTUTILS_DEBUG; ${PYTHON:-python3} setup.py --version)
+    (cd dist/; ${PYTHON:-python3} -m pip install $PKG_NAME-$PKG_VERSION.tar.gz)
 fi
 export LD_PRELOAD=$PY_LD_PRELOAD:$LD_PRELOAD
-(cd /; python3 -m pytest --pyargs $PKG_NAME)
-(cd /; python3 -c "from pykinsol import get_include as gi; import os; assert 'kinsol_numpy.pxd' in os.listdir(gi())")
+(cd /; ${PYTHON:-python3} -m pytest --pyargs $PKG_NAME)
+(cd /; ${PYTHON:-python3} -c "from pykinsol import get_include as gi; import os; assert 'kinsol_numpy.pxd' in os.listdir(gi())")
 
 #export PYTHONPATH=$(pwd)
 ./scripts/run_tests.sh
