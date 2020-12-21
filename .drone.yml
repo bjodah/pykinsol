@@ -28,6 +28,7 @@ pipeline:
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - PYTHON=python3.9
+      - CFLAGS="-Werror"
     commands:
       - export PATH="/opt/cpython-3.9-dbg/bin:$PATH"
       - bash -c "ulimit -v 2048000; PYKINSOL_NO_LAPACK=1 PYKINSOL_NO_KLU=1 .ci/run_ci.sh pykinsol /opt/sundials-5.5.0-noklu-nolapack-dbg"
@@ -42,7 +43,7 @@ pipeline:
       - CC=clang-11
       - CXX=clang++-11
       - CFLAGS=-fsanitize=address -g -fno-omit-frame-pointer -fsized-deallocation
-      - PY_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
+      - PY_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.1/lib/linux/libclang_rt.asan-x86_64.so
     commands:
       - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-5.5.0-klu-lapack"
 
