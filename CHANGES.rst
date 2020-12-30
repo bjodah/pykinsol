@@ -1,3 +1,7 @@
+v0.1.7
+======
+- Avoid using deprecated C-API in CPython 3.9+
+
 v0.1.6
 ======
 - Fix compilation without LAPACK
