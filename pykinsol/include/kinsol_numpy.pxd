@@ -2,6 +2,7 @@
 
 from cpython.object cimport PyObject
 from libcpp.vector cimport vector
+from numpy cimport PyArrayObject
 
 cdef extern from "kinsol_numpy.hpp" namespace "kinsol_numpy":
     cdef cppclass PyKinsol:
