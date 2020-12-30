@@ -15,7 +15,7 @@ namespace kinsol_numpy{
 
     class PyKinsol {
     public:
-        PyObject *py_func, *py_jac;
+        PyObject *py_func, *py_jac, *py_kwargs{nullptr};
         const int nu;
         const int ml, mu;
 
@@ -96,7 +96,7 @@ namespace kinsol_numpy{
             PyObject * py_fval = PyArray_SimpleNewFromData(
                 1, dims, NPY_DOUBLE, static_cast<void*>(fval));
             PyObject * py_arglist = Py_BuildValue("(OO)", py_uarr, py_fval);
-            PyObject * py_result = PyObject_CallObject(this->py_func, py_arglist);
+            PyObject * py_result = PyObject_Call(this->py_func, py_arglist, py_kwargs);
             Py_DECREF(py_arglist);
             Py_DECREF(py_fval);
             Py_DECREF(py_uarr);
@@ -116,7 +116,7 @@ namespace kinsol_numpy{
             PyObject * py_fy = PyArray_SimpleNewFromData(1, udims, NPY_DOUBLE,
                                                          const_cast<double *>(fy));
             PyObject * py_arglist = Py_BuildValue("(OOO)", py_uarr, py_jmat, py_fy);
-            PyObject * py_result = PyObject_CallObject(this->py_jac, py_arglist);
+            PyObject * py_result = PyObject_Call(this->py_jac, py_arglist, py_kwargs);
             Py_DECREF(py_arglist);
             Py_DECREF(py_fy);
             Py_DECREF(py_uarr);
