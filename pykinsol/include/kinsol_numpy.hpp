@@ -45,7 +45,7 @@ namespace kinsol_numpy{
                                     SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))));
             PyObject *d = PyDict_New();
             // naming scheme from: scipy.optimize.OptimizeResult
-            PyDict_SetItemString(d, "x", py_x0);
+            PyDict_SetItemString(d, "x", (PyObject*)py_x0);
             PyDict_SetItemString(d, "success", (flag >= 0) ?
                                  (Py_INCREF(Py_True), Py_True) :
                                  (Py_INCREF(Py_False), Py_False));
