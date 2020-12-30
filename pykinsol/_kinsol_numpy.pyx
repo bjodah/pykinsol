@@ -32,8 +32,8 @@ cdef class KinsolSolver:
             constraints.size != x0.size):
             raise ValueError("Incompatible lengths")
         return <object>self.thisptr.solve(
-            <PyObject*>x0, fnormtol, scsteptol, mxiter,
-            <PyObject*>x_scale, <PyObject*>f_scale, <PyObject*>constraints)
+            <cnp.PyArrayObject*>x0, fnormtol, scsteptol, mxiter,
+            <cnp.PyArrayObject*>x_scale, <cnp.PyArrayObject*>f_scale, <cnp.PyArrayObject*>constraints)
 
 
 def _a(arr):

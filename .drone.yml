@@ -1,8 +1,8 @@
 pipeline:
 
-  test-sund-5.4.0:
+  test-sund-5.5.0:
     group: testing
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     environment:
       - CC=gcc-10
       - CXX=g++-10
@@ -11,15 +11,15 @@ pipeline:
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
     commands:
-      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-5.4.0-klu-lapack"
+      - bash -c "ulimit -v 2048000; .ci/run_ci.sh pykinsol /opt/sundials-5.5.0-klu-lapack"
       - ./scripts/prepare_deploy.sh
       - bash -c '[[ $(python3 setup.py --version) =~ ^[0-9]+.* ]]'
       - ./scripts/grep-for-merge-blocking-token.sh
       - ./scripts/grep-for-binary-data.sh
 
-  test-sund-5.4.0-noklu-nolapack-dbg:
+  test-sund-5.5.0-noklu-nolapack-dbg-py39:
     group: testing
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     environment:
       - CC=gcc-10
       - CXX=g++-10
@@ -27,12 +27,15 @@ pipeline:
       - CPLUS_INCLUDE_PATH=/usr/include/suitesparse
       - LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
       - LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+      - PYTHON=python3.9
+      - CFLAGS=-Werror -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
     commands:
-      - bash -c "ulimit -v 2048000; PYKINSOL_NO_LAPACK=1 PYKINSOL_NO_KLU=1 .ci/run_ci.sh pykinsol /opt/sundials-5.4.0-noklu-nolapack-dbg"
+      - export PATH="/opt/cpython-3.9-dbg/bin:$PATH"
+      - bash -c "ulimit -v 2048000; PYKINSOL_NO_LAPACK=1 PYKINSOL_NO_KLU=1 .ci/run_ci.sh pykinsol /opt/sundials-5.5.0-noklu-nolapack-dbg"
 
-  test-sund-5.4.0-asan:
+  test-sund-5.5.0-asan:
     group: testing
-    image: bjodah/bjodahimg20dot:2.1.0.3
+    image: bjodah/bjodahimg20dot:2.1.1.2
     environment:
       - CPATH=/usr/include/suitesparse
       - ASAN_SYMBOLIZER_PATH=/usr/lib/llvm-11/bin/llvm-symbolizer
@@ -40,9 +43,9 @@ pipeline:
       - CC=clang-11
       - CXX=clang++-11
       - CFLAGS=-fsanitize=address -g -fno-omit-frame-pointer -fsized-deallocation
-      - PY_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.0/lib/linux/libclang_rt.asan-x86_64.so
+      - PY_LD_PRELOAD=/usr/lib/llvm-11/lib/clang/11.0.1/lib/linux/libclang_rt.asan-x86_64.so
     commands:
-      - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-5.4.0-klu-lapack"
+      - bash -c ".ci/run_ci.sh pykinsol /opt/sundials-5.5.0-klu-lapack"
 
 deploy:
 

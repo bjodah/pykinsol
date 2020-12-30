@@ -15,15 +15,15 @@ namespace kinsol_numpy{
 
     class PyKinsol {
     public:
-        PyObject *py_func, *py_jac;
+        PyObject *py_func, *py_jac, *py_kwargs{nullptr};
         const int nu;
         const int ml, mu;
 
         PyKinsol(PyObject * py_func, PyObject * py_jac, size_t nu, int ml=-1, int mu=-1) :
             py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu) {}
 
-        PyObject * solve(PyObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
-                         PyObject *py_x_scale, PyObject *py_f_scale, PyObject * py_constraints){
+        PyObject * solve(PyArrayObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
+                         PyArrayObject *py_x_scale, PyArrayObject *py_f_scale, PyArrayObject * py_constraints){
             std::clock_t cputime0 = std::clock();
             auto solver = kinsol_cxx::Solver();
             solver.init(kinsol_cxx::f_cb<PyKinsol>, this->nu);
@@ -45,7 +45,7 @@ namespace kinsol_numpy{
                                     SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))));
             PyObject *d = PyDict_New();
             // naming scheme from: scipy.optimize.OptimizeResult
-            PyDict_SetItemString(d, "x", py_x0);
+            PyDict_SetItemString(d, "x", (PyObject*)py_x0);
             PyDict_SetItemString(d, "success", (flag >= 0) ?
                                  (Py_INCREF(Py_True), Py_True) :
                                  (Py_INCREF(Py_False), Py_False));
@@ -96,7 +96,7 @@ namespace kinsol_numpy{
             PyObject * py_fval = PyArray_SimpleNewFromData(
                 1, dims, NPY_DOUBLE, static_cast<void*>(fval));
             PyObject * py_arglist = Py_BuildValue("(OO)", py_uarr, py_fval);
-            PyObject * py_result = PyEval_CallObject(this->py_func, py_arglist);
+            PyObject * py_result = PyObject_Call(this->py_func, py_arglist, py_kwargs);
             Py_DECREF(py_arglist);
             Py_DECREF(py_fval);
             Py_DECREF(py_uarr);
@@ -116,7 +116,7 @@ namespace kinsol_numpy{
             PyObject * py_fy = PyArray_SimpleNewFromData(1, udims, NPY_DOUBLE,
                                                          const_cast<double *>(fy));
             PyObject * py_arglist = Py_BuildValue("(OOO)", py_uarr, py_jmat, py_fy);
-            PyObject * py_result = PyEval_CallObject(this->py_jac, py_arglist);
+            PyObject * py_result = PyObject_Call(this->py_jac, py_arglist, py_kwargs);
             Py_DECREF(py_arglist);
             Py_DECREF(py_fy);
             Py_DECREF(py_uarr);
