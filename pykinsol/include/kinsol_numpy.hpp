@@ -22,8 +22,8 @@ namespace kinsol_numpy{
         PyKinsol(PyObject * py_func, PyObject * py_jac, size_t nu, int ml=-1, int mu=-1) :
             py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu) {}
 
-        PyObject * solve(PyObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
-                         PyObject *py_x_scale, PyObject *py_f_scale, PyObject * py_constraints){
+        PyObject * solve(PyArrayObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
+                         PyArrayObject *py_x_scale, PyArrayObject *py_f_scale, PyArrayObject * py_constraints){
             std::clock_t cputime0 = std::clock();
             auto solver = kinsol_cxx::Solver();
             solver.init(kinsol_cxx::f_cb<PyKinsol>, this->nu);
