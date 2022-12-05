@@ -5,7 +5,9 @@
 // #include <utility> // std::pair
 #include <vector> // std::vector
 #include <memory>  // std::make_shared
-
+#if SUNDIALS_VERSION_MAJOR >= 6
+#include <sundials/sundials_context.hpp>
+#endif
 #include "kinsol_cxx.hpp"
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 
@@ -19,14 +21,24 @@ namespace kinsol_numpy{
         PyObject *py_func, *py_jac, *py_kwargs{nullptr};
         const int nu;
         const int ml, mu;
+#if SUNDIALS_VERSION_MAJOR >= 6
         std::shared_ptr<sundials::Context> ctx;
+#endif
         PyKinsol(PyObject * py_func, PyObject * py_jac, size_t nu, int ml=-1, int mu=-1) :
-            py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu), ctx(std::make_shared<sundials::Context>(nullptr)) {}
+            py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu)
+#if SUNDIALS_VERSION_MAJOR >= 6
+, ctx(std::make_shared<sundials::Context>(nullptr))
+#endif
+ {}
 
         PyObject * solve(PyArrayObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
                          PyArrayObject *py_x_scale, PyArrayObject *py_f_scale, PyArrayObject * py_constraints){
             std::clock_t cputime0 = std::clock();
-            auto solver = kinsol_cxx::Solver(ctx);
+            auto solver = kinsol_cxx::Solver(
+#if SUNDIALS_VERSION_MAJOR >= 6
+ctx
+#endif
+);
             solver.init(kinsol_cxx::f_cb<PyKinsol>, this->nu);
             solver.set_user_data(static_cast<void*>(this));
             if (ml == -1 && mu == -1){
