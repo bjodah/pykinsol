@@ -4,6 +4,7 @@
 #include <chrono>
 // #include <utility> // std::pair
 #include <vector> // std::vector
+#include <memory>  // std::make_shared
 
 #include "kinsol_cxx.hpp"
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
@@ -18,14 +19,14 @@ namespace kinsol_numpy{
         PyObject *py_func, *py_jac, *py_kwargs{nullptr};
         const int nu;
         const int ml, mu;
-
+        std::shared_ptr<sundials::Context> ctx;
         PyKinsol(PyObject * py_func, PyObject * py_jac, size_t nu, int ml=-1, int mu=-1) :
-            py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu) {}
+            py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu), ctx(std::make_shared<sundials::Context>(nullptr)) {}
 
         PyObject * solve(PyArrayObject *py_x0, double fnormtol, double scsteptol, long int mxiter,
                          PyArrayObject *py_x_scale, PyArrayObject *py_f_scale, PyArrayObject * py_constraints){
             std::clock_t cputime0 = std::clock();
-            auto solver = kinsol_cxx::Solver();
+            auto solver = kinsol_cxx::Solver(ctx);
             solver.init(kinsol_cxx::f_cb<PyKinsol>, this->nu);
             solver.set_user_data(static_cast<void*>(this));
             if (ml == -1 && mu == -1){
@@ -38,11 +39,27 @@ namespace kinsol_numpy{
             solver.set_num_max_iters(mxiter);
             solver.set_func_norm_tol(fnormtol);
             solver.set_scaled_steptol(scsteptol);
-            solver.set_constraints(SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_constraints, 0))));
-            int flag = solver.solve(SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x0, 0))),
+            solver.set_constraints(SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_constraints, 0))
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+));
+            int flag = solver.solve(SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x0, 0))
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+),
                                     KIN_LINESEARCH,
-                                    SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x_scale, 0))),
-                                    SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))));
+                                    SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_x_scale, 0))
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+),
+                                    SVectorView(this->nu, static_cast<double*>(PyArray_GETPTR1(py_f_scale, 0))
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+                                        ));
             PyObject *d = PyDict_New();
             // naming scheme from: scipy.optimize.OptimizeResult
             PyDict_SetItemString(d, "x", (PyObject*)py_x0);

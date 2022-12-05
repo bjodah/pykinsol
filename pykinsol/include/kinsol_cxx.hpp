@@ -104,10 +104,25 @@ namespace kinsol_cxx {
         SUNLinearSolver LS_ = nullptr;
         N_Vector y_ = nullptr;
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 6
+        std::shared_ptr<sundials::Context> ctx;
+#endif
     public:
         void *mem {nullptr};
-        Solver() {
-            this->mem = KINCreate();
+        Solver(
+#if SUNDIALS_VERSION_MAJOR >= 6
+            std::shared_ptr<sundials::Context> ctx
+            ) : ctx(ctx)
+#else
+                )
+#endif
+ {
+
+            this->mem = KINCreate(
+#if SUNDIALS_VERSION_MAJOR >= 6
+                *ctx
+#endif
+);
         }
         ~Solver(){
             if (this->mem)
@@ -126,7 +141,11 @@ namespace kinsol_cxx {
 #if SUNDIALS_VERSION_MAJOR >= 3
             if (y_)
                 throw std::runtime_error("y_ already allocated");
-            y_ = N_VNew_Serial(NV_LENGTH_S(y));
+            y_ = N_VNew_Serial(NV_LENGTH_S(y)
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+);
             std::memcpy(NV_DATA_S(y_), NV_DATA_S(y), NV_LENGTH_S(y)*sizeof(realtype));
 #else
             auto y_ = y;
@@ -143,7 +162,11 @@ namespace kinsol_cxx {
             this->init(cb, tmpl.n_vec);
         }
         void init(KINSysFn cb, int ny) {
-            this->init(cb, SVector(ny));
+            this->init(cb, SVector(ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+));
         }
         int solve(SVectorView u, int strategy, SVectorView u_scale, SVectorView f_scale){
             return KINSol(this->mem, u.n_vec, strategy, u_scale.n_vec, f_scale.n_vec);
@@ -288,7 +311,11 @@ namespace kinsol_cxx {
             if (A_ == nullptr){
                 if (A_)
                     throw std::runtime_error("matrix already set");
-                A_ = SUNDenseMatrix(ny, ny);
+                A_ = SUNDenseMatrix(ny, ny
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+);
                 if (!A_)
                     throw std::runtime_error("SUNDenseMatrix failed.");
             }
@@ -309,13 +336,25 @@ namespace kinsol_cxx {
                 SUNLapackDense
 #  endif
 # endif
-                    (y_, A_);
+                    (y_, A_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+);
                 if (!LS_)
                     throw std::runtime_error("SUNDenseLinearSolver failed.");
             }
+#if SUNDIALS_VERSION_MAJOR >= 6
+            flag = KINSetLinearSolver(this->mem, LS_, A_);
+            if (flag < 0) {
+                throw std::runtime_error("KINSetLinearSolver failed.");
+            }
+#else
             flag = KINDlsSetLinearSolver(this->mem, LS_, A_);
-            if (flag < 0)
+            if (flag < 0) {
                 throw std::runtime_error("KINDlsSetLinearSolver failed.");
+            }
+#endif
 #else
             flag = KINLapackDense(this->mem, ny);
             if (flag != KINDLS_SUCCESS)
@@ -323,7 +362,9 @@ namespace kinsol_cxx {
 #endif
         }
         void set_dense_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+                              KINLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
                               KINDlsJacFn
 #else
                               KINDlsDenseJacFn
@@ -331,7 +372,9 @@ namespace kinsol_cxx {
 
                               djac){
             int flag;
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+            flag = KINSetJacFn(this->mem, djac);
+#elif SUNDIALS_VERSION_MAJOR >= 3
             flag = KINDlsSetJacFn(this->mem, djac);
 #else
             flag = KINDlsSetDenseJacFn(this->mem, djac);
@@ -352,6 +395,9 @@ namespace kinsol_cxx {
 #  if SUNDIALS_VERSION_MAJOR < 4
                                    , mlower+mupper
 #  endif
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
                     );
                 if (!A_)
                     throw std::runtime_error("SUNDenseMatrix failed.");
@@ -366,7 +412,11 @@ namespace kinsol_cxx {
                     # else
                     SUNBandLinearSolver
                     #endif
-                    (y_, A_);
+                    (y_, A_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+);
 #  else
                 LS_ =
                     # if SUNDIALS_VERSION_MAJOR >= 4
@@ -374,14 +424,26 @@ namespace kinsol_cxx {
                     #else
                     SUNLapackBand
                     #endif
-                    (y_, A_);
+                    (y_, A_
+#if SUNDIALS_VERSION_MAJOR >= 6
+                , *ctx
+#endif
+);
 #  endif
                 if (!LS_)
                     throw std::runtime_error("SUNDenseLinearSolver failed.");
             }
+#if SUNDIALS_VERSION_MAJOR >= 6
+            status = KINSetLinearSolver(this->mem, LS_, A_);
+            if (status < 0) {
+                throw std::runtime_error("KINSetLinearSolver failed.");
+            }
+#else
             status = KINDlsSetLinearSolver(this->mem, LS_, A_);
-            if (status < 0)
+            if (status < 0) {
                 throw std::runtime_error("KINDlsSetLinearSolver failed.");
+            }
+#endif
 #else
             status =
 #  if PYKINSOL_NO_LAPACK == 1
@@ -401,14 +463,18 @@ namespace kinsol_cxx {
 #endif
         }
         void set_band_jac_fn(
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+                              KINLsJacFn
+#elif SUNDIALS_VERSION_MAJOR >= 3
                               KINDlsJacFn
 #else
                               KINDlsBandJacFn
 #endif
                               djac){
             int flag;
-#if SUNDIALS_VERSION_MAJOR >= 3
+#if SUNDIALS_VERSION_MAJOR >= 6
+            flag = KINSetJacFn(this->mem, djac);
+#elif SUNDIALS_VERSION_MAJOR >= 3
             flag = KINDlsSetJacFn(this->mem, djac);
 #else
             flag = KINDlsSetBandJacFn(this->mem, djac);
@@ -433,7 +499,13 @@ namespace kinsol_cxx {
         // KINDLS linear solvers
         long int get_num_jac_evals(){
             long int res=0;
-            int flag = KINDlsGetNumJacEvals(this->mem, &res);
+            int flag =
+#if SUNDIALS_VERSION_MAJOR >= 6
+ KINGetNumJacEvals(this->mem, &res)
+#else
+ KINDlsGetNumJacEvals(this->mem, &res)
+#endif
+                ;
             check_flag(flag);
             return res;
         }
