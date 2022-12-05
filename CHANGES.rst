@@ -1,3 +1,7 @@
+v0.1.8
+======
+- Support for SUNDIALS 6+
+
 v0.1.7
 ======
 - Avoid using deprecated C-API in CPython 3.9+
