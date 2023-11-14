@@ -34,13 +34,3 @@ cdef class KinsolSolver:
         return <object>self.thisptr.solve(
             <cnp.PyArrayObject*>x0, fnormtol, scsteptol, mxiter,
             <cnp.PyArrayObject*>x_scale, <cnp.PyArrayObject*>f_scale, <cnp.PyArrayObject*>constraints)
-
-
-def _a(arr):
-    return np.asarray(arr, dtype=np.float64)
-
-
-def solve(f_cb, j_cb, x0, fnormtol, scsteptol, x_scale, f_scale, constraints, lband=-1, uband=-1, mxiter=200):
-    x = np.array(x0, dtype=np.float64)
-    solver = KinsolSolver(f_cb, j_cb, x.size, lband, uband)
-    return solver.solve(x, fnormtol, scsteptol, _a(x_scale), _a(f_scale), _a(constraints), mxiter)

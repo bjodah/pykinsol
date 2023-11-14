@@ -3,7 +3,11 @@ from __future__ import (absolute_import, division, print_function)
 
 import numpy as np
 
-from ._kinsol_numpy import solve as _solve
+from ._kinsol_numpy import KinsolSolver as _KinsolSolver
+
+
+def _a(arr):
+    return np.asarray(arr, dtype=np.float64)
 
 
 def solve(f_cb, j_cb, x0, fnormtol=1e-6, scsteptol=1e-12, x_scale=None,
@@ -37,5 +41,6 @@ def solve(f_cb, j_cb, x0, fnormtol=1e-6, scsteptol=1e-12, x_scale=None,
         x_scale = np.ones(x0.size)
     if constraints is None:
         constraints = np.zeros(x0.size)
-    return _solve(f_cb, j_cb, x0, fnormtol, scsteptol, x_scale, f_scale,
-                  constraints, lband, uband, mxiter)
+    x = np.array(x0, dtype=np.float64)
+    solver = _KinsolSolver(f_cb, j_cb, x.size, lband, uband)
+    return solver.solve(x, fnormtol, scsteptol, _a(x_scale), _a(f_scale), _a(constraints), mxiter)
