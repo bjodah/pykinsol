@@ -85,6 +85,14 @@ namespace /* anonymous */ {
         }
         return false;
     }
+    bool contains_inf(double * p, int N) {
+        for (int i=0; i<N; ++i){
+            if (std::isinf(p[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 namespace kinsol_cxx {
@@ -526,7 +534,8 @@ namespace kinsol_cxx {
     int f_cb(N_Vector u, N_Vector fval, void *user_data){
         NeqSys * neqsys = static_cast<NeqSys*>(user_data);
         neqsys->func(NV_DATA_S(u), NV_DATA_S(fval));
-        if (contains_nan(NV_DATA_S(fval), NV_LENGTH_S(fval))) {
+        if (contains_nan(NV_DATA_S(fval), NV_LENGTH_S(fval)) ||
+            contains_inf(NV_DATA_S(fval), NV_LENGTH_S(fval))) {
             return 1;
         }
         return 0;
@@ -554,6 +563,13 @@ namespace kinsol_cxx {
 #endif
                                );
         if (contains_nan(
+#if SUNDIALS_VERSION_MAJOR < 3
+                DENSE_COL(Jac, 0), Jac->ldim*NV_LENGTH_S(u)
+#else
+                SM_DATA_D(Jac), NV_LENGTH_S(u)*NV_LENGTH_S(u)
+#endif
+                ) ||
+            contains_inf(
 #if SUNDIALS_VERSION_MAJOR < 3
                 DENSE_COL(Jac, 0), Jac->ldim*NV_LENGTH_S(u)
 #else
@@ -590,7 +606,8 @@ namespace kinsol_cxx {
         auto Jac_ = SM_CONTENT_B(Jac);
 #endif
         neqsys->banded_padded_jac_cmaj(NV_DATA_S(u), NV_DATA_S(fu), Jac_->data, Jac_->ldim);
-        if (contains_nan(Jac_->data, Jac_->ldim*NV_LENGTH_S(u))) {
+        if (contains_nan(Jac_->data, Jac_->ldim*NV_LENGTH_S(u)) ||
+            contains_inf(Jac_->data, Jac_->ldim*NV_LENGTH_S(u))) {
             return 1;
         }
         return 0;
