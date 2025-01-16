@@ -48,12 +48,12 @@ fi
 SUNDBASE=$1
 if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
-    export PYCVODES_NO_LAPACK=1 PYCVODES_NO_KLU=1
+    >&2 echo "pykinsol currently only supports double precision"
+    exit 1
 fi
-LINKLIBS="$(${PYTHON:-python3} setup.py --print-linkline)"
 export CPATH=/usr/include/suitesparse  # include <klu.h>
 export CXXFLAGS="${CXXFLAGS:-} -isystem $SUNDBASE/include"
-export LDFLAGS="$LINKLIBS -Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
+export LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib -lopenblas"
 export LD_LIBRARY_PATH=$(compgen -G "/opt-2/llvm-*/lib")
 
 if [ $TEST_ASAN -eq 1 ]; then
@@ -89,12 +89,12 @@ fi
 
 $PYTHON -m pip install build #--upgrade --upgrade-strategy=eager build setuptools==72.1.0 wheel
 $PYTHON -m build . --sdist
-$PYTHON -m pip uninstall -y pycvodes
+$PYTHON -m pip uninstall -y pykinsol
 cd dist/
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON -m pip install *.tar.gz
 
 
-$PYTHON -m pytest -v "$EXTRA_PYTEST_FLAGS" --doctest-modules --pyargs pycvodes
+$PYTHON -m pytest -v ${EXTRA_PYTEST_FLAGS:-} --doctest-modules --pyargs pykinsol
 cd -
 
 if [[ $RENDER -eq 1 ]]; then
