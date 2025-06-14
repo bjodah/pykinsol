@@ -73,8 +73,7 @@ if [ $TEST_ASAN -eq 1 ]; then
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
     LLVM_ROOT=$(compgen -G "/opt-2/llvm-*")
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    #export LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
-    export LD_PRELOAD=$(clang++ --print-file-name=libstdc++.so)
+    export PY_LD_PRELOAD="$(clang++ --print-file-name=libclang_rt.asan.so):$(clang++ --print-file-name=libstdc++.so)"
     export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
 else
     export CC=gcc
@@ -99,11 +98,20 @@ cd dist/
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON -m pip install *.tar.gz
 
 
-$PYTHON -m pytest -v ${EXTRA_PYTEST_FLAGS:-} --doctest-modules --pyargs pykinsol
+env \
+    LD_PRELOAD=${PY_LD_PRELOAD:-} \
+    $PYTHON -m pytest \
+    -v \
+    ${EXTRA_PYTEST_FLAGS:-} \
+    --doctest-modules --pyargs pykinsol
 cd -
 
 if [[ $RENDER -eq 1 ]]; then
     $PYTHON -m doctest README.rst
-    (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-    (cd examples/; ../scripts/render_index.sh *.html)
+    ( cd examples/; jupyter nbconvert \
+                           --to=html \
+                           --ExecutePreprocessor.enabled=True \
+                           --ExecutePreprocessor.timeout=300 \
+                           *.ipynb )
+    ( cd examples/; ../scripts/render_index.sh *.html )
 fi
