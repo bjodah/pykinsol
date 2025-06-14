@@ -11,7 +11,7 @@ TEST_ASAN=0
 MAKE_TMP_DIR=0
 RENDER=0
 PYTHON=python3
-while [ $# -gt 1 ]; do
+while [ $# -gt 0 ]; do
     case $1 in
         --native)
             NATIVE=1
@@ -34,6 +34,11 @@ while [ $# -gt 1 ]; do
             RENDER=1
             shift
             ;;
+        --sundials-dir)
+            shift
+            SUNDBASE=$1
+            shift
+            ;;
         *)
             >&2 echo "Unrecognized parameter: $1"
             exit 1
@@ -45,7 +50,6 @@ if [ "$MAKE_TMP_DIR" = 1 ]; then
     cp -ra . "$REPO_TMP_DIR/."
     cd "$REPO_TMP_DIR"
 fi
-SUNDBASE=$1
 if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     >&2 echo "pykinsol currently only supports double precision"
@@ -67,9 +71,9 @@ if [ $TEST_ASAN -eq 1 ]; then
     fi
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
+    LLVM_ROOT=$(compgen -G "/opt-2/llvm-*")
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
-    #export LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
-    export LD_PRELOAD=$(clang++ --print-file-name=libstdc++.so)
+    export PY_LD_PRELOAD="$(clang++ --print-file-name=libclang_rt.asan.so):$(clang++ --print-file-name=libstdc++.so)"
     export PYTHON="env ASAN_OPTIONS=abort_on_error=1,detect_leaks=0 ${PYTHON:-python3}"
 else
     export CC=gcc
@@ -94,11 +98,20 @@ cd dist/
 CC=$CXX CFLAGS=$CXXFLAGS $PYTHON -m pip install *.tar.gz
 
 
-$PYTHON -m pytest -v ${EXTRA_PYTEST_FLAGS:-} --doctest-modules --pyargs pykinsol
+env \
+    LD_PRELOAD=${PY_LD_PRELOAD:-} \
+    $PYTHON -m pytest \
+    -v \
+    ${EXTRA_PYTEST_FLAGS:-} \
+    --doctest-modules --pyargs pykinsol
 cd -
 
 if [[ $RENDER -eq 1 ]]; then
     $PYTHON -m doctest README.rst
-    (cd examples/; jupyter nbconvert --to=html --ExecutePreprocessor.enabled=True --ExecutePreprocessor.timeout=300 *.ipynb)
-    (cd examples/; ../scripts/render_index.sh *.html)
+    ( cd examples/; jupyter nbconvert \
+                           --to=html \
+                           --ExecutePreprocessor.enabled=True \
+                           --ExecutePreprocessor.timeout=300 \
+                           *.ipynb )
+    ( cd examples/; ../scripts/render_index.sh *.html )
 fi
