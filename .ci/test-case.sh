@@ -71,6 +71,7 @@ if [ $TEST_ASAN -eq 1 ]; then
     fi
     export CXXFLAGS="$CXXFLAGS -fsanitize=address -stdlib++-isystem ${LIBCXX_ASAN_INCLUDE} -ferror-limit=5"
     export LDFLAGS="${LDFLAGS:-} -fsanitize=address -Wl,-rpath,${LIBCXX_ASAN_ROOT}/lib -L${LIBCXX_ASAN_ROOT}/lib -lc++ -lc++abi -stdlib=libc++"
+    LLVM_ROOT=$(compgen -G "/opt-2/llvm-*")
     export LIBRARY_PATH="$LLVM_ROOT/lib:${LIBCXX_ASAN_ROOT}/lib:${LIBRARY_PATH:-}"
     #export LD_PRELOAD=$(clang++ --print-file-name=libclang_rt.asan.so)
     export LD_PRELOAD=$(clang++ --print-file-name=libstdc++.so)

@@ -33,7 +33,7 @@ steps:
       - PYKINSOL_NO_LAPACK=1
       - PYKINSOL_NO_KLU=1
     commands:
-      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 /opt-3/sundials-6.7.0-release
+      - .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 --sundials-dir /opt-3/sundials-6.7.0-release
 
   - name: sdist-and-docs
     image: cont-reg.bjodah.se:443/bjodah/triceratops-3:24
