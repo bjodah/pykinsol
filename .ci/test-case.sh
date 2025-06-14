@@ -11,7 +11,7 @@ TEST_ASAN=0
 MAKE_TMP_DIR=0
 RENDER=0
 PYTHON=python3
-while [ $# -gt 1 ]; do
+while [ $# -gt 0 ]; do
     case $1 in
         --native)
             NATIVE=1
@@ -34,6 +34,11 @@ while [ $# -gt 1 ]; do
             RENDER=1
             shift
             ;;
+        --sundials-dir)
+            shift
+            SUNDBASE=$1
+            shift
+            ;;
         *)
             >&2 echo "Unrecognized parameter: $1"
             exit 1
@@ -45,7 +50,6 @@ if [ "$MAKE_TMP_DIR" = 1 ]; then
     cp -ra . "$REPO_TMP_DIR/."
     cd "$REPO_TMP_DIR"
 fi
-SUNDBASE=$1
 if [ ! -e "$SUNDBASE/include/sundials/sundials_config.h" ]; then >&2 echo "No such directory: $SUNDBASE"; exit 1; fi
 if [[ $SUNDBASE =~ *-extended || $SUNDBASE =~ *-single ]]; then
     >&2 echo "pykinsol currently only supports double precision"
