@@ -38,7 +38,7 @@ else:
 
 
 def _warn(msg):
-    if os.environ.get("PYCVODES_STRICT", '0') == '1':
+    if os.environ.get("PYKINSOL_STRICT", '0') == '1':
         raise RuntimeError(msg)
     else:
         warnings.warn(msg)
