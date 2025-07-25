@@ -82,6 +82,7 @@ else
     #if $CXX --version | head -n 1 | grep -E 'g++\.*13\.[0-9]\.[0-9]$'; then exit 1; fi
     export CXXFLAGS="$CXXFLAGS -D_GLIBCXX_DEBUG -D_GLIBCXX_PEDANTIC"
     export CONTEXT="echo ''; echo ''; valgrind --error-exitcode=1"
+    export PYTHON_ENV=""
 fi
 
 
