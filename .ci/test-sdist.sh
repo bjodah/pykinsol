@@ -16,7 +16,9 @@ SUNDBASE=$(compgen -G /opt-3/sundials-6.*-release)
 env \
     CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
     LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
-    CC=gcc CXX=g++ python3 setup.py build_ext -i
+    CC=gcc \
+    CXX=g++ \
+    python3 setup.py build_ext -i
 
 pip install pytest-flakes pytest-cov matplotlib sphinx numpydoc sphinx-rtd-theme
 ./scripts/run_tests.sh --cov ${CI_REPO_NAME} --cov-report html
