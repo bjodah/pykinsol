@@ -49,7 +49,7 @@ steps:
       # - bash -c '[[ $(python3 setup.py --version 2>/dev/null) =~ ^[0-9]+.* ]]'
       - bash -l .ci/test-sdist.sh
       - ./scripts/prepare_deploy.sh
-      - if grep "DO-NOT-MERGE!" -R . --exclude ".woodpecker.yaml"; then exit 1; fi
+      - ./ci/grep-for-merge-blocking-token.sh
     depends_on:
       - pypy
       - py3.11-rel
