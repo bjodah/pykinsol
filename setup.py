@@ -76,9 +76,10 @@ ext_modules = []
 if len(sys.argv) > 1 and '--help' not in sys.argv[1:] and sys.argv[1] not in (
         '--help-commands', 'egg_info', 'clean', '--version'):
     import numpy as np
-    env = None  # silence pyflakes, 'env' is actually set on the next line
+    _get_env = None  # silence pyflakes, '_get_env' is actually set on the next lines
     _PYKINSOL_IGNORE_CFG = 1  # avoid using cached config upon running setup.py
     exec(open(config_py_path).read())
+    env = _get_env()
     for k, v in list(env.items()):
         env[k] = os.environ.get('%s_%s' % (pkg_name.upper(), k), v)
     logger = logging.getLogger(__name__)
