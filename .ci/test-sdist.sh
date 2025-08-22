@@ -11,8 +11,8 @@ SUNDBASE=$(compgen -G /opt-3/sundials-6.*-release)
     ; cd ./dist/ \
     ; pip install ${CI_REPO_NAME}-*.tar.gz )
 
-python3 -m pytest --pyargs pykinsol
-cd -
+( cd /; python3 -m pytest --pyargs pykinsol )
+
 env \
     CFLAGS="-isystem $SUNDBASE/include -isystem /usr/include/suitesparse" \
     LDFLAGS="-Wl,--disable-new-dtags -Wl,-rpath,$SUNDBASE/lib -L$SUNDBASE/lib" \
