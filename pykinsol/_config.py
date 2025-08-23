@@ -38,7 +38,7 @@ else:
 
 
 def _warn(msg):
-    if os.environ.get("PYCVODES_STRICT", '0') == '1':
+    if os.environ.get("PYKINSOL_STRICT", '0') == '1':
         raise RuntimeError(msg)
     else:
         warnings.warn(msg)
@@ -182,26 +182,6 @@ def _attempt_compilation():
         logger.info("KLU either not enabled for sundials or not in include path:\n%s" % _klu_out)
     return locals()
 
-env = None
-if appdirs:
-    if '__version__' not in locals():  # it will be when exec'd from setup.py
-        from pykinsol import __version__
-    _cfg = os.path.join(
-        appdirs.user_config_dir('pykinsol'),
-        'python-%s-pykinsol-%s-env.pkl' % ('%d.%d' % sys.version_info[:2], __version__)
-    )
-    if locals().get('_PYKINSOL_IGNORE_CFG', 0) == 0:
-        if os.path.exists(_cfg) and os.path.getsize(_cfg):
-            with open(_cfg, 'rb') as ifh:
-                env = pickle.load(ifh)
-        else:
-            logger.info("Path: '%s' does not exist, will run test compilations" % _cfg)
-    else:
-        logger.info("ignoring contents of '%s' (running from setup.py)" % _cfg)
-else:
-    logger.info("appdirs not installed, will run test compilations")
-
-
 def _make_dirs(path):
     if path[-1] == '/':
         parent = os.path.dirname(path[:-1])
@@ -219,53 +199,75 @@ def _make_dirs(path):
     else:
         assert os.path.isdir(path)
 
-if env is None:
-    _r = _attempt_compilation()
-
-    if 'PYKINSOL_LAPACK' in os.environ:
-        if os.environ['PYKINSOL_LAPACK'] in ('', '0'):
-            _r['_lapack_ok'] = False
-
-    env = {
-        'LAPACK': 'blas,lapack' if _r['_lapack_ok'] else '',
-        'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_kinsol',
-        'NO_LAPACK': '0' if _r['_lapack_ok'] else '1',
-        'NO_KLU': '0' if _r['_klu_ok'] else '1'
-    }
-    if _r['_sun3']:
-        if _r['_lapack_ok']:
-            env['SUNDIALS_LIBS'] += ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband'
-        else:
-            env['SUNDIALS_LIBS'] += (
-                ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr'
-                ',sundials_sunlinsolspbcgs,sundials_sunlinsolsptfqmr,sundials_sunmatrixdense'
-                ',sundials_sunmatrixband')
-        if _r['_klu_ok']:
-            env['SUNDIALS_LIBS'] += ',sundials_sunlinsolklu'
-    else:
-        if _r['_klu_ok']:
-            env['SUNDIALS_LIBS'] += ',klu'
-
-    prec, realtype = _get_sun_precision_and_realtype()
-    env['SUNDIALS_PRECISION'] = prec
-    env['REAL_TYPE'] = realtype
-    if not prec:
-        _warn("Couldn't determine sundials precision from sundials/sundials_config.h")
-
-    indextype = _get_sun_index_type()
-    env['INDEX_TYPE'] = indextype
-
+def _get_env():
+    env = None
     if appdirs:
-        if locals().get('_PYKINSOL_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall:
-            _cfg_dir = os.path.dirname(_cfg)
-            if not os.path.exists(_cfg_dir):
-                _make_dirs(_cfg_dir)
-            with open(_cfg, 'wb') as ofh:
-                pickle.dump(env, ofh)
+        if '__version__' not in locals():  # it will be when exec'd from setup.py
+            from pykinsol import __version__
+        _cfg = os.path.join(
+            appdirs.user_config_dir('pykinsol'),
+            'python-%s-pykinsol-%s-env.pkl' % ('%d.%d' % sys.version_info[:2], __version__)
+        )
+        if locals().get('_PYKINSOL_IGNORE_CFG', 0) == 0:
+            if os.path.exists(_cfg) and os.path.getsize(_cfg):
+                with open(_cfg, 'rb') as ifh:
+                    env = pickle.load(ifh)
+            else:
+                logger.info("Path: '%s' does not exist, will run test compilations" % _cfg)
         else:
-            if os.path.exists(_cfg):
-                os.unlink(_cfg)  # remove old config on re-install
+            logger.info("ignoring contents of '%s' (running from setup.py)" % _cfg)
+    else:
+        logger.info("appdirs not installed, will run test compilations")
 
 
-for k, v in list(env.items()):
-    env[k] = os.environ.get('%s_%s' % ('PYKINSOL', k), v)
+    if env is None:
+        _r = _attempt_compilation()
+
+        if 'PYKINSOL_LAPACK' in os.environ:
+            if os.environ['PYKINSOL_LAPACK'] in ('', '0'):
+                _r['_lapack_ok'] = False
+
+        env = {
+            'LAPACK': 'blas,lapack' if _r['_lapack_ok'] else '',
+            'SUNDIALS_LIBS': 'sundials_nvecserial,sundials_kinsol',
+            'NO_LAPACK': '0' if _r['_lapack_ok'] else '1',
+            'NO_KLU': '0' if _r['_klu_ok'] else '1'
+        }
+        if _r['_sun3']:
+            if _r['_lapack_ok']:
+                env['SUNDIALS_LIBS'] += ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband'
+            else:
+                env['SUNDIALS_LIBS'] += (
+                    ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr'
+                    ',sundials_sunlinsolspbcgs,sundials_sunlinsolsptfqmr,sundials_sunmatrixdense'
+                    ',sundials_sunmatrixband')
+            if _r['_klu_ok']:
+                env['SUNDIALS_LIBS'] += ',sundials_sunlinsolklu'
+        else:
+            if _r['_klu_ok']:
+                env['SUNDIALS_LIBS'] += ',klu'
+
+        prec, realtype = _get_sun_precision_and_realtype()
+        env['SUNDIALS_PRECISION'] = prec
+        env['REAL_TYPE'] = realtype
+        if not prec:
+            _warn("Couldn't determine sundials precision from sundials/sundials_config.h")
+
+        indextype = _get_sun_index_type()
+        env['INDEX_TYPE'] = indextype
+
+        if appdirs:
+            if locals().get('_PYKINSOL_IGNORE_CFG', 0) == 0:  # system files off-limits during EasyInstall:
+                _cfg_dir = os.path.dirname(_cfg)
+                if not os.path.exists(_cfg_dir):
+                    _make_dirs(_cfg_dir)
+                with open(_cfg, 'wb') as ofh:
+                    pickle.dump(env, ofh)
+            else:
+                if os.path.exists(_cfg):
+                    os.unlink(_cfg)  # remove old config on re-install
+
+
+    for k, v in list(env.items()):
+        env[k] = os.environ.get('%s_%s' % ('PYKINSOL', k), v)
+    return env

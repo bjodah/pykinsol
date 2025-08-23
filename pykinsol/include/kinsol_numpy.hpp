@@ -78,10 +78,10 @@ ctx
             PyDict_SetItemString(d, "success", (flag >= 0) ?
                                  (Py_INCREF(Py_True), Py_True) :
                                  (Py_INCREF(Py_False), Py_False));
-            PyDict_SetItemString(d, "status", PyInt_FromLong(flag));
-            PyDict_SetItemString(d, "nfev", PyInt_FromLong(solver.get_num_func_evals()));
-            PyDict_SetItemString(d, "njev", PyInt_FromLong(solver.get_num_jac_evals()));
-            PyDict_SetItemString(d, "nit", PyInt_FromLong(solver.get_num_nonlin_solv_iters()));
+            PyDict_SetItemString(d, "status", PyLong_FromLong(flag));
+            PyDict_SetItemString(d, "nfev", PyLong_FromLong(solver.get_num_func_evals()));
+            PyDict_SetItemString(d, "njev", PyLong_FromLong(solver.get_num_jac_evals()));
+            PyDict_SetItemString(d, "nit", PyLong_FromLong(solver.get_num_nonlin_solv_iters()));
             PyDict_SetItemString(d, "time_cpu", PyFloat_FromDouble((std::clock() - cputime0) / (double)CLOCKS_PER_SEC));
             switch(flag){
             case KIN_SUCCESS:
