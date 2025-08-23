@@ -1,3 +1,7 @@
+v0.1.9
+======
+- Support for latest python and numpy.
+
 v0.1.8
 ======
 - Support for SUNDIALS 6+
