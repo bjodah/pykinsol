@@ -203,7 +203,10 @@ def _get_env():
     env = None
     if appdirs:
         if '__version__' not in locals():  # it will be when exec'd from setup.py
-            from pykinsol import __version__
+            try:
+                from pykinsol import __version__
+            except ImportError:
+                __version__ = '0.2.0.dev0+git'
         _cfg = os.path.join(
             appdirs.user_config_dir('pykinsol'),
             'python-%s-pykinsol-%s-env.pkl' % ('%d.%d' % sys.version_info[:2], __version__)
