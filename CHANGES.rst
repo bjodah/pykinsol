@@ -1,3 +1,7 @@
+v0.2.0
+======
+- Support SUNDIALS 7.x
+
 v0.1.8
 ======
 - Support for SUNDIALS 6+

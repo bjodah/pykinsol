@@ -2,6 +2,9 @@
 #include <cstring> // std::memcpy
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
 #include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 7
+#  include <sundials/sundials_types_deprecated.h>
+#endif
 namespace sundials_cxx {
 #if SUNDIALS_VERSION_MAJOR >= 3
     const int version_major = SUNDIALS_VERSION_MAJOR;

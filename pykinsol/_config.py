@@ -100,6 +100,16 @@ def _get_sun_index_type():
     # default to int32_t
     return "int32_t"
 
+
+def _sundials_version_major_at_least(major):
+    codestring = """#include <sundials/sundials_config.h>
+                    #if SUNDIALS_VERSION_MAJOR < {0}
+                        #error "INFO: SUNDIALS_VERSION_MAJOR too old"
+                    #endif
+                 """
+    _ok, _ = _compiles_ok(codestring.format(major))
+    return _ok
+
 logger = logging.getLogger(__name__)
 
 
@@ -124,11 +134,12 @@ def _attempt_compilation():
     #endif
     """)
 
-    _sun3, _lapack_ok, _klu_ok = False, False, False
+    _sun3, _sun7, _lapack_ok, _klu_ok = False, False, False, False
     if _sun3_ok:
+        _sun7 = _sundials_version_major_at_least(7)
         _lapack_ok, _lapack_out = _compiles_ok("""
     #include <sundials/sundials_config.h>
-    #if !defined(SUNDIALS_BLAS_LAPACK)
+    #if !defined(SUNDIALS_BLAS_LAPACK) && !defined(SUNDIALS_BLAS_LAPACK_ENABLED)
     #  error "INFO: Sundials 3+ was not configured to use lapack"
     #endif
     """)
@@ -153,7 +164,7 @@ def _attempt_compilation():
             _sun3 = False
             _lapack_ok, _lapack_out = _compiles_ok("""
     #include <sundials/sundials_config.h>
-    #if !defined(SUNDIALS_BLAS_LAPACK)
+    #if !defined(SUNDIALS_BLAS_LAPACK) && !defined(SUNDIALS_BLAS_LAPACK_ENABLED)
     #  error "INFO: Sundials 2 was not configured to use lapack"
     #endif
     """)
@@ -170,7 +181,7 @@ def _attempt_compilation():
 
     _klu_ok, _klu_out = _compiles_ok("""
         #include <sundials/sundials_config.h>
-        #if !defined(SUNDIALS_KLU)
+        #if !defined(SUNDIALS_KLU) && !defined(SUNDIALS_KLU_ENABLED)
         #error "INFO: KLU was not enabled for this sundials build"
         #endif
         """)
@@ -237,13 +248,15 @@ def _get_env():
             'NO_KLU': '0' if _r['_klu_ok'] else '1'
         }
         if _r['_sun3']:
+            env['SUNDIALS_LIBS'] += ',sundials_sunmatrixdense,sundials_sunmatrixband,sundials_sunmatrixsparse'
+            if _r['_sun7']:
+                env['SUNDIALS_LIBS'] += ',sundials_core'
             if _r['_lapack_ok']:
                 env['SUNDIALS_LIBS'] += ',sundials_sunlinsollapackdense,sundials_sunlinsollapackband'
             else:
                 env['SUNDIALS_LIBS'] += (
                     ',sundials_sunlinsoldense,sundials_sunlinsolband,sundials_sunlinsolspgmr'
-                    ',sundials_sunlinsolspbcgs,sundials_sunlinsolsptfqmr,sundials_sunmatrixdense'
-                    ',sundials_sunmatrixband')
+                    ',sundials_sunlinsolspbcgs,sundials_sunlinsolsptfqmr')
             if _r['_klu_ok']:
                 env['SUNDIALS_LIBS'] += ',sundials_sunlinsolklu'
         else:
