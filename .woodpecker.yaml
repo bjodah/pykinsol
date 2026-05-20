@@ -60,8 +60,8 @@ steps:
       - py3.12-asan
       - py3.13-release
       #- py3.11-debug
-
   - name: deploy-public-html
+    image: *ci_image
     image: *ci_image
     environment:
       ARTIFACTS_PASS:
