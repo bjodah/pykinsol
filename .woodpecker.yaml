@@ -9,11 +9,13 @@ steps:
     image: *ci_image
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/pypy3.*-linux64/bin/python3 --sundials-dir /opt-3/sundials-6.7.0-debug
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/pypy3.*-linux64/bin/python3 --sundials-dir /opt-3/sundials-7.7.0-debug
 
   - name: py3.11-rel
     image: *ci_image
     commands:
       - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 --sundials-dir /opt-3/sundials-6.7.0-debug
+      - bash -l .ci/test-case.sh --tmp --python /opt-3/cpython-v3.11.*-release/bin/python3 --sundials-dir /opt-3/sundials-7.7.0-debug
 
   - name: py3.12-asan
     image: *ci_image
@@ -22,6 +24,7 @@ steps:
       CXXFLAGS: -U_NDEBUG -UNDEBUG -Og -ggdb3
     commands:
       - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 --sundials-dir /opt-3/sundials-6.7.0-debug
+      - bash -l .ci/test-case.sh --asan --tmp --python /opt-3/cpython-v3.12.*-release/bin/python3 --sundials-dir /opt-3/sundials-7.7.0-debug
 
   - name: py3.13-release
     image: *ci_image
@@ -30,6 +33,7 @@ steps:
       PYKINSOL_NO_KLU: 1
     commands:
       - bash -lc "source /opt-3/cpython-v3.13*-apt-deb/bin/activate; .ci/test-case.sh --tmp --asan --sundials-dir /opt-3/sundials-6.7.0-release"
+      - bash -lc "source /opt-3/cpython-v3.13*-apt-deb/bin/activate; .ci/test-case.sh --tmp --asan --sundials-dir /opt-3/sundials-7.7.0-release"
 
   # - name: py3.11-debug
   #   image: *ci_image
