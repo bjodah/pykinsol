@@ -27,7 +27,11 @@ namespace kinsol_numpy{
         PyKinsol(PyObject * py_func, PyObject * py_jac, size_t nu, int ml=-1, int mu=-1) :
             py_func(py_func), py_jac(py_jac), nu(nu), ml(ml), mu(mu)
 #if SUNDIALS_VERSION_MAJOR >= 6
+#  if SUNDIALS_VERSION_MAJOR >= 7
+, ctx(std::make_shared<sundials::Context>(SUN_COMM_NULL))
+#  else
 , ctx(std::make_shared<sundials::Context>(nullptr))
+#  endif
 #endif
  {}
 

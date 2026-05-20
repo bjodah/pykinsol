@@ -12,21 +12,31 @@
 #  define KINLS_MEM_FAIL KINSPILS_MEM_FAIL
 #endif
 #if !defined(PYKINSOL_NO_KLU)
-#  if defined(SUNDIALS_KLU)
+#  if defined(SUNDIALS_KLU) || defined(SUNDIALS_KLU_ENABLED)
 #    define PYKINSOL_NO_KLU 0
 #  else
 #    define PYKINSOL_NO_KLU 1
 #  endif
 #endif
+#if SUNDIALS_VERSION_MAJOR >= 7
+#  include <sundials/sundials_types_deprecated.h>
+#  include <sundials/sundials_context.hpp>
+#endif
 #include "sundials_cxx.hpp" // sundials_cxx::nvector_serial::Vector
-#include <kinsol/kinsol_spils.h>
+#if SUNDIALS_VERSION_MAJOR >= 7
+#  include <kinsol/kinsol_ls.h>
+#else
+#  include <kinsol/kinsol_spils.h>
+#endif
 #if SUNDIALS_VERSION_MAJOR >= 3
-#  include <kinsol/kinsol_direct.h> /* KINSOL fcts., KIN_BDF, KIN_ADAMS */
+#  if SUNDIALS_VERSION_MAJOR < 7
+#    include <kinsol/kinsol_direct.h> /* KINSOL fcts., KIN_BDF, KIN_ADAMS */
+#  endif
 #  include <sunmatrix/sunmatrix_dense.h>
 #  include <sunmatrix/sunmatrix_band.h>
 #  include <sunmatrix/sunmatrix_sparse.h>
 #  if !defined(PYKINSOL_NO_LAPACK)
-#    if defined(SUNDIALS_BLAS_LAPACK)
+#    if defined(SUNDIALS_BLAS_LAPACK) || defined(SUNDIALS_BLAS_LAPACK_ENABLED)
 #      define PYKINSOL_NO_LAPACK 0
 #    else
 #      define PYKINSOL_NO_LAPACK 1
@@ -52,7 +62,7 @@
 #    include <kinsol/kinsol_spbcgs.h>
 #    include <kinsol/kinsol_sptfqmr.h>
 #    if !defined(PYKINSOL_NO_LAPACK)
-#      if defined(SUNDIALS_BLAS_LAPACK)
+#      if defined(SUNDIALS_BLAS_LAPACK) || defined(SUNDIALS_BLAS_LAPACK_ENABLED)
 #        define PYKINSOL_NO_LAPACK 0
 #      else
 #        define PYKINSOL_NO_LAPACK 1
